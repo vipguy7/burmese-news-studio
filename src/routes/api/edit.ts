@@ -19,6 +19,14 @@ export const Route = createFileRoute("/api/edit")({
         const apiKey = process.env.LOVABLE_API_KEY;
         if (!apiKey) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
+        const userId = await getUserIdFromRequest(request);
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Sign in to use AI." }), {
+            status: 401,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
         let body: z.infer<typeof BodySchema>;
         try {
           body = BodySchema.parse(await request.json());
@@ -32,6 +40,14 @@ export const Route = createFileRoute("/api/edit")({
         const key = await hashKey({ kind: "edit", ...body });
         const cached = cacheGet(key);
         if (cached) return Response.json({ ...JSON.parse(cached), cached: true });
+
+        const quota = await checkAndIncrement(userId);
+        if (!quota.ok) {
+          return new Response(
+            JSON.stringify({ error: quota.reason, used: quota.used, limit: quota.limit }),
+            { status: 429, headers: { "content-type": "application/json" } },
+          );
+        }
 
         const gateway = createLovableAiGatewayProvider(apiKey);
         const model = gateway("google/gemini-2.5-flash");
