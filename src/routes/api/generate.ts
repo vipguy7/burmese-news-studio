@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
+import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
 
 const BodySchema = z.object({
   mode: z.enum(["burmese-standard", "burmese-long", "english"]),
@@ -98,6 +99,14 @@ export const Route = createFileRoute("/api/generate")({
         const apiKey = process.env.LOVABLE_API_KEY;
         if (!apiKey)
           return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+
+        const userId = await getUserIdFromRequest(request);
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Sign in to use AI." }), {
+            status: 401,
+            headers: { "content-type": "application/json" },
+          });
+        }
 
         let body: z.infer<typeof BodySchema>;
         try {
