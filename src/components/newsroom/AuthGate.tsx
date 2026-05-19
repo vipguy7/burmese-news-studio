@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Loader2, LogOut, Sparkles } from "lucide-react";
+import { Loader2, LogOut, Sparkles, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { aiFetch } from "@/lib/ai-fetch";
+
+type Usage = { used: number; limit: number; remaining: number };
+const UsageContext_KEY = "__refreshUsage__";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
