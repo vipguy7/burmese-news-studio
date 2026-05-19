@@ -88,12 +88,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Burmese News Studio" },
-      { name: "description", content: "- Transform Web News to Social Media post or Video Narration Script 
-- Write translated news article from web link" },
-      { property: "og:description", content: "- Transform Web News to Social Media post or Video Narration Script 
-- Write translated news article from web link" },
-      { name: "twitter:description", content: "- Transform Web News to Social Media post or Video Narration Script 
-- Write translated news article from web link" },
+      { name: "description", content: "- Transform Web News to Social Media post or Video Narration Script\n- Write translated news article from web link" },
+      { property: "og:description", content: "- Transform Web News to Social Media post or Video Narration Script\n- Write translated news article from web link" },
+      { name: "twitter:description", content: "- Transform Web News to Social Media post or Video Narration Script\n- Write translated news article from web link" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/ad99ad0c-ccf0-42fd-8015-f957fd04f693" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/ad99ad0c-ccf0-42fd-8015-f957fd04f693" },
     ],
