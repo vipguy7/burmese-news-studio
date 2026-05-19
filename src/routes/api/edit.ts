@@ -52,36 +52,25 @@ RULES:
           });
           const editedClean = cleanNarrative(edited.text);
 
-          const diff = await generateText({
+          const diffRaw = await generateText({
             model,
             system:
-              "You analyze two versions of a news draft and list concrete editorial improvements. Be specific, terse, and professional. No markdown.",
-            prompt: `ORIGINAL:\n${body.text}\n\nEDITED:\n${editedClean}\n\nList the improvements.`,
-            output: Output.object({
-              schema: z.object({
-                improvements: z
-                  .array(
-                    z.object({
-                      category: z.enum([
-                        "Unicode",
-                        "Grammar",
-                        "Pacing",
-                        "Clarity",
-                        "Impact",
-                        "Attribution",
-                        "Style",
-                      ]),
-                      note: z.string().min(4).max(220),
-                    }),
-                  )
-                  .min(1)
-                  .max(12),
-                summary: z.string().min(10).max(280),
-              }),
-            }),
+              'You analyze two versions of a news draft and list concrete editorial improvements. Output ONLY a JSON object, no markdown. Schema: {"improvements": [{"category": "Unicode"|"Grammar"|"Pacing"|"Clarity"|"Impact"|"Attribution"|"Style", "note": string}], "summary": string}. 1-10 improvements. Be specific, terse, professional.',
+            prompt: `ORIGINAL:\n${body.text}\n\nEDITED:\n${editedClean}\n\nReturn the JSON object now.`,
           });
+          let analysis: { improvements: { category: string; note: string }[]; summary: string } = {
+            improvements: [],
+            summary: "Edits applied for clarity, pacing, and journalistic impact.",
+          };
+          try {
+            const raw = diffRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
+            const match = raw.match(/\{[\s\S]*\}/);
+            if (match) analysis = { ...analysis, ...JSON.parse(match[0]) };
+          } catch {
+            /* keep defaults */
+          }
 
-          const result = { original: body.text, edited: editedClean, analysis: diff.output, cached: false };
+          const result = { original: body.text, edited: editedClean, analysis, cached: false };
           cacheSet(key, JSON.stringify(result));
           return Response.json(result);
         } catch (err) {
