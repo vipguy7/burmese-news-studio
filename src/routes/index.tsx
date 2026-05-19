@@ -86,9 +86,9 @@ function Newsroom() {
 
     setGenLoading(true);
     try {
-      const res = await fetch("/api/generate", {
+      const { aiFetch } = await import("@/lib/ai-fetch");
+      const res = await aiFetch("/api/generate", {
         method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode, scriptType, tone, source, sourceKind, instructions }),
       });
       const data = await res.json();
@@ -111,9 +111,9 @@ function Newsroom() {
     if (!draft.trim()) return setEditError("Please paste a draft to edit.");
     setEditLoading(true);
     try {
-      const res = await fetch("/api/edit", {
+      const { aiFetch } = await import("@/lib/ai-fetch");
+      const res = await aiFetch("/api/edit", {
         method: "POST",
-        headers: { "content-type": "application/json" },
         body: JSON.stringify({ text: draft.trim(), language: editLang }),
       });
       const data = await res.json();
