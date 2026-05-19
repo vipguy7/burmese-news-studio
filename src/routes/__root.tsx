@@ -72,14 +72,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Newsroom — Myanmar News Studio" },
+      { title: "Burmese News Studio" },
       {
         name: "description",
         content:
           "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards.",
       },
       { name: "author", content: "Newsroom" },
-      { property: "og:title", content: "Newsroom — Myanmar News Studio" },
+      { property: "og:title", content: "Burmese News Studio" },
       {
         property: "og:description",
         content:
@@ -87,6 +87,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Burmese News Studio" },
+      { name: "description", content: "- Transform Web News to Social Media post or Video Narration Script 
+- Write translated news article from web link" },
+      { property: "og:description", content: "- Transform Web News to Social Media post or Video Narration Script 
+- Write translated news article from web link" },
+      { name: "twitter:description", content: "- Transform Web News to Social Media post or Video Narration Script 
+- Write translated news article from web link" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/ad99ad0c-ccf0-42fd-8015-f957fd04f693" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/ad99ad0c-ccf0-42fd-8015-f957fd04f693" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
