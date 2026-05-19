@@ -72,19 +72,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Newsroom — Myanmar News Studio" },
+      {
+        name: "description",
+        content:
+          "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards.",
+      },
+      { name: "author", content: "Newsroom" },
+      { property: "og:title", content: "Newsroom — Myanmar News Studio" },
+      {
+        property: "og:description",
+        content:
+          "AI-powered news generation, proof-editing, and SEO suite for Myanmar media organizations.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=Noto+Serif+Myanmar:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap",
       },
     ],
   }),
