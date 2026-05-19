@@ -189,6 +189,7 @@ TASK: Produce the ${body.scriptType === "video" ? "broadcast narration script" :
             narrative: cleaned,
             seo,
             cached: false,
+            usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
           return Response.json(result);
