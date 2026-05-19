@@ -144,26 +144,32 @@ TASK: Produce the ${body.scriptType === "video" ? "broadcast narration script" :
           });
           const cleaned = cleanNarrative(narrative.text);
 
-          // 2) SEO + categorization in one structured call
-          const seo = await generateText({
+          // 2) SEO + categorization — ask for JSON directly
+          const seoRaw = await generateText({
             model,
             system:
-              "You are a Myanmar newsroom SEO editor. Produce concise metadata in the SAME LANGUAGE as the article. Never include markdown.",
-            prompt: `ARTICLE:\n${cleaned}\n\nProduce SEO metadata.`,
-            output: Output.object({
-              schema: z.object({
-                title: z.string(),
-                metaDescription: z.string(),
-                hashtags: z.array(z.string()),
-                category: z.string(),
-                keywords: z.array(z.string()),
-              }),
-            }),
+              'You are a Myanmar newsroom SEO editor. Output ONLY a single JSON object, no markdown, no commentary. Schema: {"title": string, "metaDescription": string, "hashtags": string[], "category": string, "keywords": string[]}. Use the SAME LANGUAGE as the article for title, metaDescription, and hashtags. Category from: Politics, Economy, Business, Technology, Health, Environment, Conflict & Security, International, Sports, Culture, Education, Human Rights, Other.',
+            prompt: `ARTICLE:\n${cleaned}\n\nReturn the JSON object now.`,
           });
+
+          let seo = {
+            title: "",
+            metaDescription: "",
+            hashtags: [] as string[],
+            category: "Other",
+            keywords: [] as string[],
+          };
+          try {
+            const raw = seoRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
+            const match = raw.match(/\{[\s\S]*\}/);
+            if (match) seo = { ...seo, ...JSON.parse(match[0]) };
+          } catch {
+            /* keep defaults */
+          }
 
           const result = {
             narrative: cleaned,
-            seo: seo.output,
+            seo,
             cached: false,
           };
           cacheSet(key, JSON.stringify(result));
