@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
+import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
 
 const BodySchema = z.object({
   text: z.string().min(1).max(60000),
