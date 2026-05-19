@@ -93,15 +93,15 @@ function Newsroom() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 429) throw new Error("Rate limit reached. Please wait a moment and retry.");
         if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
-        throw new Error(data.error || "Generation failed");
+        throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Generation failed"));
       }
       setGenResult(data);
     } catch (e) {
       setGenError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setGenLoading(false);
+      (window as unknown as { __refreshUsage__?: () => void }).__refreshUsage__?.();
     }
   }
 
@@ -118,15 +118,15 @@ function Newsroom() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 429) throw new Error("Rate limit reached. Please wait a moment and retry.");
         if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
-        throw new Error(data.error || "Edit failed");
+        throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Edit failed"));
       }
       setEditResult(data);
     } catch (e) {
       setEditError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setEditLoading(false);
+      (window as unknown as { __refreshUsage__?: () => void }).__refreshUsage__?.();
     }
   }
 
