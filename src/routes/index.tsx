@@ -4,10 +4,17 @@ import { Loader2, Sparkles, ScanText, Hash, Tag, AlignLeft } from "lucide-react"
 import { Masthead } from "@/components/newsroom/Masthead";
 import { SourceInput, type SourceKind } from "@/components/newsroom/SourceInput";
 import { CopyDownload } from "@/components/newsroom/CopyDownload";
+import { AuthGate } from "@/components/newsroom/AuthGate";
 import { diffWords } from "@/lib/diff";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/")({ component: Newsroom });
+export const Route = createFileRoute("/")({
+  component: () => (
+    <AuthGate>
+      <Newsroom />
+    </AuthGate>
+  ),
+});
 
 type Mode = "burmese-standard" | "burmese-long" | "english";
 type ScriptType = "video" | "web";
