@@ -136,6 +136,15 @@ export const Route = createFileRoute("/api/generate")({
           return Response.json({ ...JSON.parse(cached), cached: true });
         }
 
+        // Check & reserve quota for this user before spending AI credits.
+        const quota = await checkAndIncrement(userId);
+        if (!quota.ok) {
+          return new Response(
+            JSON.stringify({ error: quota.reason, used: quota.used, limit: quota.limit }),
+            { status: 429, headers: { "content-type": "application/json" } },
+          );
+        }
+
         const gateway = createLovableAiGatewayProvider(apiKey);
         const model = gateway("google/gemini-2.5-flash");
 
