@@ -87,7 +87,13 @@ RULES:
             /* keep defaults */
           }
 
-          const result = { original: body.text, edited: editedClean, analysis, cached: false };
+          const result = {
+            original: body.text,
+            edited: editedClean,
+            analysis,
+            cached: false,
+            usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
+          };
           cacheSet(key, JSON.stringify(result));
           return Response.json(result);
         } catch (err) {
