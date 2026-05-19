@@ -13,18 +13,39 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
+
+  const refreshUsage = useCallback(async () => {
+    try {
+      const r = await aiFetch("/api/usage");
+      if (r.ok) setUsage(await r.json());
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       setLoading(false);
+      if (s) refreshUsage();
+      else setUsage(null);
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      if (data.session) refreshUsage();
     });
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [refreshUsage]);
+
+  // Expose refresh hook on window so the newsroom page can trigger updates after a request.
+  useEffect(() => {
+    (window as unknown as Record<string, unknown>)[UsageContext_KEY] = refreshUsage;
+    return () => {
+      delete (window as unknown as Record<string, unknown>)[UsageContext_KEY];
+    };
+  }, [refreshUsage]);
 
   async function signIn() {
     setSigningIn(true);
@@ -89,9 +110,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     <>
       <div className="border-b border-border bg-card/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-2 flex items-center justify-end gap-3 text-xs font-sans">
-          {avatar && (
-            <img src={avatar} alt="" className="w-6 h-6 rounded-full" />
+          {usage && (
+            <span
+              className={
+                "inline-flex items-center gap-1 px-2 py-0.5 border border-border " +
+                (usage.remaining === 0
+                  ? "text-destructive border-destructive/40"
+                  : "text-muted-foreground")
+              }
+              title={`Resets on the 1st of next month`}
+            >
+              <Zap className="w-3 h-3" />
+              {usage.remaining}/{usage.limit} free AI left
+            </span>
           )}
+          {avatar && <img src={avatar} alt="" className="w-6 h-6 rounded-full" />}
           <span className="text-muted-foreground">{name}</span>
           <button
             onClick={() => supabase.auth.signOut()}
