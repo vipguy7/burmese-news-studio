@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
+import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
 
 const BodySchema = z.object({
   text: z.string().min(1).max(60000),
@@ -17,6 +18,14 @@ export const Route = createFileRoute("/api/edit")({
       POST: async ({ request }: { request: Request }) => {
         const apiKey = process.env.LOVABLE_API_KEY;
         if (!apiKey) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+
+        const userId = await getUserIdFromRequest(request);
+        if (!userId) {
+          return new Response(JSON.stringify({ error: "Sign in to use AI." }), {
+            status: 401,
+            headers: { "content-type": "application/json" },
+          });
+        }
 
         let body: z.infer<typeof BodySchema>;
         try {
@@ -31,6 +40,14 @@ export const Route = createFileRoute("/api/edit")({
         const key = await hashKey({ kind: "edit", ...body });
         const cached = cacheGet(key);
         if (cached) return Response.json({ ...JSON.parse(cached), cached: true });
+
+        const quota = await checkAndIncrement(userId);
+        if (!quota.ok) {
+          return new Response(
+            JSON.stringify({ error: quota.reason, used: quota.used, limit: quota.limit }),
+            { status: 429, headers: { "content-type": "application/json" } },
+          );
+        }
 
         const gateway = createLovableAiGatewayProvider(apiKey);
         const model = gateway("google/gemini-2.5-flash");
@@ -70,7 +87,13 @@ RULES:
             /* keep defaults */
           }
 
-          const result = { original: body.text, edited: editedClean, analysis, cached: false };
+          const result = {
+            original: body.text,
+            edited: editedClean,
+            analysis,
+            cached: false,
+            usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
+          };
           cacheSet(key, JSON.stringify(result));
           return Response.json(result);
         } catch (err) {
