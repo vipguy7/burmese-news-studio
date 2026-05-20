@@ -86,22 +86,22 @@ function Newsroom() {
 
     setGenLoading(true);
     try {
-      const { aiFetch } = await import("@/lib/ai-fetch");
-      const res = await aiFetch("/api/generate", {
+      const res = await fetch("/api/generate", {
         method: "POST",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode, scriptType, tone, source, sourceKind, instructions }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 429) throw new Error("Rate limit reached. Please wait a moment and retry.");
         if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
-        throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Generation failed"));
+        throw new Error(data.error || "Generation failed");
       }
       setGenResult(data);
     } catch (e) {
       setGenError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setGenLoading(false);
-      (window as unknown as { __refreshUsage__?: () => void }).__refreshUsage__?.();
     }
   }
 
@@ -111,22 +111,22 @@ function Newsroom() {
     if (!draft.trim()) return setEditError("Please paste a draft to edit.");
     setEditLoading(true);
     try {
-      const { aiFetch } = await import("@/lib/ai-fetch");
-      const res = await aiFetch("/api/edit", {
+      const res = await fetch("/api/edit", {
         method: "POST",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ text: draft.trim(), language: editLang }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 429) throw new Error("Rate limit reached. Please wait a moment and retry.");
         if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
-        throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Edit failed"));
+        throw new Error(data.error || "Edit failed");
       }
       setEditResult(data);
     } catch (e) {
       setEditError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setEditLoading(false);
-      (window as unknown as { __refreshUsage__?: () => void }).__refreshUsage__?.();
     }
   }
 

@@ -5,7 +5,6 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
-import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
 
 const BodySchema = z.object({
   mode: z.enum(["burmese-standard", "burmese-long", "english"]),
@@ -100,14 +99,6 @@ export const Route = createFileRoute("/api/generate")({
         if (!apiKey)
           return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
-        const userId = await getUserIdFromRequest(request);
-        if (!userId) {
-          return new Response(JSON.stringify({ error: "Sign in to use AI." }), {
-            status: 401,
-            headers: { "content-type": "application/json" },
-          });
-        }
-
         let body: z.infer<typeof BodySchema>;
         try {
           body = BodySchema.parse(await request.json());
@@ -134,15 +125,6 @@ export const Route = createFileRoute("/api/generate")({
         const cached = cacheGet(key);
         if (cached) {
           return Response.json({ ...JSON.parse(cached), cached: true });
-        }
-
-        // Check & reserve quota for this user before spending AI credits.
-        const quota = await checkAndIncrement(userId);
-        if (!quota.ok) {
-          return new Response(
-            JSON.stringify({ error: quota.reason, used: quota.used, limit: quota.limit }),
-            { status: 429, headers: { "content-type": "application/json" } },
-          );
         }
 
         const gateway = createLovableAiGatewayProvider(apiKey);
@@ -189,7 +171,6 @@ TASK: Produce the ${body.scriptType === "video" ? "broadcast narration script" :
             narrative: cleaned,
             seo,
             cached: false,
-            usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
           return Response.json(result);
