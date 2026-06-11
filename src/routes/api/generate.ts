@@ -290,7 +290,8 @@ export const Route = createFileRoute("/api/generate")({
           }
         }
 
-        const key = await hashKey({ ...body, sourceText });
+        // Scope cache per-user: prevents cross-user quota bypass + usage leakage.
+        const key = await hashKey({ userId, ...body, sourceText });
         const cached = cacheGet(key);
         if (cached) {
           return Response.json({ ...JSON.parse(cached), cached: true });
