@@ -37,7 +37,8 @@ export const Route = createFileRoute("/api/edit")({
           });
         }
 
-        const key = await hashKey({ kind: "edit", ...body });
+        // Scope cache per-user: prevents cross-user quota bypass + usage leakage.
+        const key = await hashKey({ kind: "edit", userId, ...body });
         const cached = cacheGet(key);
         if (cached) return Response.json({ ...JSON.parse(cached), cached: true });
 
