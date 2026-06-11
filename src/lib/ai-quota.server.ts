@@ -37,23 +37,36 @@ export async function getUsage(userId: string): Promise<{ used: number; limit: n
   return { used, limit: MONTHLY_FREE_LIMIT, remaining: Math.max(0, MONTHLY_FREE_LIMIT - used) };
 }
 
-/** Check quota and atomically increment if allowed. */
+/** Atomically check quota and increment if allowed (single SQL statement). */
 export async function checkAndIncrement(userId: string): Promise<QuotaCheck> {
-  const period = currentPeriod();
-  const current = await getUsage(userId);
-  if (current.remaining <= 0) {
-    return { ok: false, ...current, reason: `Monthly limit of ${MONTHLY_FREE_LIMIT} AI requests reached. Resets next month.` };
+  const { data, error } = await supabaseAdmin.rpc("increment_ai_usage", {
+    _user_id: userId,
+    _limit: MONTHLY_FREE_LIMIT,
+  });
+  if (error || !data || !Array.isArray(data) || data.length === 0) {
+    const current = await getUsage(userId);
+    return {
+      ok: false,
+      used: current.used,
+      limit: MONTHLY_FREE_LIMIT,
+      remaining: current.remaining,
+      reason: "Could not record usage.",
+    };
   }
-
-  const newCount = current.used + 1;
-  const { error } = await supabaseAdmin
-    .from("ai_usage")
-    .upsert(
-      { user_id: userId, period_start: period, used_count: newCount, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" },
-    );
-  if (error) {
-    return { ok: false, used: current.used, limit: MONTHLY_FREE_LIMIT, remaining: current.remaining, reason: "Could not record usage." };
+  const row = data[0] as { allowed: boolean; used: number };
+  if (!row.allowed) {
+    return {
+      ok: false,
+      used: row.used,
+      limit: MONTHLY_FREE_LIMIT,
+      remaining: 0,
+      reason: `Monthly limit of ${MONTHLY_FREE_LIMIT} AI requests reached. Resets next month.`,
+    };
   }
-  return { ok: true, used: newCount, limit: MONTHLY_FREE_LIMIT, remaining: MONTHLY_FREE_LIMIT - newCount };
+  return {
+    ok: true,
+    used: row.used,
+    limit: MONTHLY_FREE_LIMIT,
+    remaining: Math.max(0, MONTHLY_FREE_LIMIT - row.used),
+  };
 }
