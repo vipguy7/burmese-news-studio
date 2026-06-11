@@ -40,7 +40,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_ai_usage: {
+        Args: { _limit: number; _user_id: string }
+        Returns: {
+          allowed: boolean
+          used: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
