@@ -50,19 +50,97 @@ CRITICAL OUTPUT RULES — these are absolute:
 ${input.instructions ? `\nADDITIONAL EDITOR NOTES: ${input.instructions}` : ""}`;
 }
 
-async function fetchUrl(url: string): Promise<string> {
+function isPrivateIp(ip: string): boolean {
+  // IPv4
+  const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b] = [parseInt(v4[1], 10), parseInt(v4[2], 10)];
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local incl. cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+    if (a >= 224) return true; // multicast/reserved
+    return false;
+  }
+  // IPv6
+  const lower = ip.toLowerCase();
+  if (lower === "::1" || lower === "::") return true;
+  if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // ULA
+  if (lower.startsWith("fe80")) return true; // link-local
+  if (lower.startsWith("::ffff:")) return isPrivateIp(lower.slice(7));
+  return false;
+}
+
+async function resolveAndCheck(hostname: string): Promise<void> {
+  // Reject literal private IPs in hostname
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":")) {
+    if (isPrivateIp(hostname.replace(/^\[|\]$/g, ""))) {
+      throw new Error("Blocked: private/internal address");
+    }
+    return;
+  }
+  // Block obvious internal names
+  const lower = hostname.toLowerCase();
+  if (
+    lower === "localhost" ||
+    lower.endsWith(".localhost") ||
+    lower.endsWith(".internal") ||
+    lower.endsWith(".local") ||
+    lower === "metadata.google.internal"
+  ) {
+    throw new Error("Blocked: internal hostname");
+  }
+  // DNS-over-HTTPS resolve and verify against private ranges
   try {
-    const res = await fetch(url, {
+    for (const type of ["A", "AAAA"]) {
+      const r = await fetch(
+        `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${type}`,
+        { headers: { accept: "application/dns-json" }, signal: AbortSignal.timeout(5000) },
+      );
+      if (!r.ok) continue;
+      const j = (await r.json()) as { Answer?: { data: string; type: number }[] };
+      for (const ans of j.Answer ?? []) {
+        if (ans.data && isPrivateIp(ans.data)) {
+          throw new Error("Blocked: resolves to private address");
+        }
+      }
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Blocked:")) throw e;
+    // DNS check best-effort; do not fail open on resolver hiccup if literal checks passed
+  }
+}
+
+async function fetchUrl(rawUrl: string): Promise<string> {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("Could not fetch URL: invalid URL");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Could not fetch URL: only http(s) URLs are allowed");
+  }
+  await resolveAndCheck(parsed.hostname);
+
+  try {
+    const res = await fetch(parsed.toString(), {
       headers: {
         "user-agent":
           "Mozilla/5.0 (compatible; NewsroomBot/1.0; +https://lovable.dev)",
         accept: "text/html,application/xhtml+xml",
       },
+      redirect: "manual",
       signal: AbortSignal.timeout(15000),
     });
+    if (res.status >= 300 && res.status < 400) {
+      throw new Error("Redirects are not followed");
+    }
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
     const html = await res.text();
-    // Very lightweight extraction
     let body = html
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
