@@ -50,6 +50,31 @@ CRITICAL OUTPUT RULES — these are absolute:
 ${input.instructions ? `\nADDITIONAL EDITOR NOTES: ${input.instructions}` : ""}`;
 }
 
+// ---- URL fetch hardening ----
+const FETCH_TIMEOUT_MS = 10_000;
+const MAX_RESPONSE_BYTES = 2_000_000; // 2 MB hard cap on remote payload
+const ALLOWED_PORTS = new Set(["", "80", "443"]);
+const ALLOWED_CONTENT_TYPES = ["text/html", "application/xhtml+xml", "text/plain"];
+
+/**
+ * Optional strict allowlist. When URL_FETCH_ALLOWLIST is set (comma-separated
+ * host suffixes, e.g. "bbc.com,rfa.org,mizzima.com"), only matching hosts may
+ * be fetched. Unset = open (still subject to SSRF, port, size, time checks).
+ */
+function getAllowlist(): string[] | null {
+  const raw = process.env.URL_FETCH_ALLOWLIST?.trim();
+  if (!raw) return null;
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase().replace(/^\.+/, ""))
+    .filter(Boolean);
+}
+
+function hostMatchesAllowlist(host: string, list: string[]): boolean {
+  const h = host.toLowerCase();
+  return list.some((entry) => h === entry || h.endsWith(`.${entry}`));
+}
+
 function isPrivateIp(ip: string): boolean {
   // IPv4
   const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
@@ -61,6 +86,10 @@ function isPrivateIp(ip: string): boolean {
     if (a === 169 && b === 254) return true; // link-local incl. cloud metadata
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 192 && b === 168) return true;
+    if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking
+    if (a === 192 && b === 0) return true; // 192.0.0.0/24 & 192.0.2.0/24
+    if (a === 198 && b === 51) return true; // TEST-NET-2
+    if (a === 203 && b === 0) return true; // TEST-NET-3
     if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
     if (a >= 224) return true; // multicast/reserved
     return false;
@@ -70,32 +99,40 @@ function isPrivateIp(ip: string): boolean {
   if (lower === "::1" || lower === "::") return true;
   if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // ULA
   if (lower.startsWith("fe80")) return true; // link-local
+  if (lower.startsWith("2001:db8")) return true; // documentation
+  if (lower.startsWith("64:ff9b::")) return true; // NAT64
   if (lower.startsWith("::ffff:")) return isPrivateIp(lower.slice(7));
   return false;
 }
 
-async function resolveAndCheck(hostname: string): Promise<void> {
-  // Reject literal private IPs in hostname
+/**
+ * Resolve hostname via Cloudflare DoH and reject if ANY answer is a private/
+ * internal address. Returns the resolved IPs so the caller can pin against
+ * them (best-effort TOCTOU mitigation — see fetchUrl).
+ */
+async function resolveAndCheck(hostname: string): Promise<string[]> {
+  // Reject literal IPs in hostname
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":")) {
-    if (isPrivateIp(hostname.replace(/^\[|\]$/g, ""))) {
-      throw new Error("Blocked: private/internal address");
-    }
-    return;
+    const bare = hostname.replace(/^\[|\]$/g, "");
+    if (isPrivateIp(bare)) throw new Error("Blocked: private/internal address");
+    return [bare];
   }
-  // Block obvious internal names
   const lower = hostname.toLowerCase();
   if (
     lower === "localhost" ||
     lower.endsWith(".localhost") ||
     lower.endsWith(".internal") ||
     lower.endsWith(".local") ||
-    lower === "metadata.google.internal"
+    lower === "metadata.google.internal" ||
+    lower === "metadata.goog"
   ) {
     throw new Error("Blocked: internal hostname");
   }
-  // DNS-over-HTTPS resolve and verify against private ranges
-  try {
-    for (const type of ["A", "AAAA"]) {
+
+  const ips: string[] = [];
+  let resolved = false;
+  for (const type of ["A", "AAAA"]) {
+    try {
       const r = await fetch(
         `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${type}`,
         { headers: { accept: "application/dns-json" }, signal: AbortSignal.timeout(5000) },
@@ -103,15 +140,19 @@ async function resolveAndCheck(hostname: string): Promise<void> {
       if (!r.ok) continue;
       const j = (await r.json()) as { Answer?: { data: string; type: number }[] };
       for (const ans of j.Answer ?? []) {
-        if (ans.data && isPrivateIp(ans.data)) {
+        if (!ans.data) continue;
+        resolved = true;
+        if (isPrivateIp(ans.data)) {
           throw new Error("Blocked: resolves to private address");
         }
+        ips.push(ans.data);
       }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith("Blocked:")) throw e;
     }
-  } catch (e) {
-    if (e instanceof Error && e.message.startsWith("Blocked:")) throw e;
-    // DNS check best-effort; do not fail open on resolver hiccup if literal checks passed
   }
+  if (!resolved) throw new Error("Blocked: hostname did not resolve");
+  return ips;
 }
 
 async function fetchUrl(rawUrl: string): Promise<string> {
@@ -124,6 +165,17 @@ async function fetchUrl(rawUrl: string): Promise<string> {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new Error("Could not fetch URL: only http(s) URLs are allowed");
   }
+  if (parsed.username || parsed.password) {
+    throw new Error("Could not fetch URL: credentials in URL not allowed");
+  }
+  if (!ALLOWED_PORTS.has(parsed.port)) {
+    throw new Error("Could not fetch URL: only standard ports (80/443) allowed");
+  }
+  const allowlist = getAllowlist();
+  if (allowlist && !hostMatchesAllowlist(parsed.hostname, allowlist)) {
+    throw new Error("Could not fetch URL: host not in allowlist");
+  }
+  // Resolve + validate (also gives us the IP set for TOCTOU mitigation).
   await resolveAndCheck(parsed.hostname);
 
   try {
@@ -131,16 +183,46 @@ async function fetchUrl(rawUrl: string): Promise<string> {
       headers: {
         "user-agent":
           "Mozilla/5.0 (compatible; NewsroomBot/1.0; +https://lovable.dev)",
-        accept: "text/html,application/xhtml+xml",
+        accept: "text/html,application/xhtml+xml,text/plain;q=0.8",
       },
       redirect: "manual",
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (res.status >= 300 && res.status < 400) {
       throw new Error("Redirects are not followed");
     }
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-    const html = await res.text();
+
+    const ctype = (res.headers.get("content-type") || "").toLowerCase();
+    if (ctype && !ALLOWED_CONTENT_TYPES.some((c) => ctype.includes(c))) {
+      throw new Error(`Blocked: unsupported content-type (${ctype})`);
+    }
+    const declared = Number(res.headers.get("content-length") || "0");
+    if (declared && declared > MAX_RESPONSE_BYTES) {
+      throw new Error("Blocked: response exceeds size limit");
+    }
+
+    // Stream with hard size cap (TOCTOU-safe against lying Content-Length).
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("Fetch failed: empty body");
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) {
+        total += value.byteLength;
+        if (total > MAX_RESPONSE_BYTES) {
+          try { await reader.cancel(); } catch { /* ignore */ }
+          throw new Error("Blocked: response exceeds size limit");
+        }
+        chunks.push(value);
+      }
+    }
+    const buf = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) { buf.set(c, offset); offset += c.byteLength; }
+    const html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
     let body = html
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
