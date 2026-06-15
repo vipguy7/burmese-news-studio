@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Loader2, Sparkles, ScanText, Hash, Tag, AlignLeft } from "lucide-react";
+import { Loader2, Sparkles, ScanText, Hash, Tag, AlignLeft, Brain } from "lucide-react";
 import { Masthead } from "@/components/newsroom/Masthead";
 import { SourceInput, type SourceKind } from "@/components/newsroom/SourceInput";
 import { CopyDownload } from "@/components/newsroom/CopyDownload";
@@ -164,6 +164,12 @@ function Newsroom() {
             </button>
           );
         })}
+        <Link
+          to="/brain"
+          className="ml-auto px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Brain className="w-4 h-4" /> Second Brain
+        </Link>
       </nav>
 
       {tab === "generate" && (
