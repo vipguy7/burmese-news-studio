@@ -35,6 +35,48 @@ export type Database = {
         }
         Relationships: []
       }
+      brain_items: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          embedding: string | null
+          id: string
+          language: string
+          source_type: string
+          source_url: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          embedding?: string | null
+          id?: string
+          language?: string
+          source_type?: string
+          source_url?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          embedding?: string | null
+          id?: string
+          language?: string
+          source_type?: string
+          source_url?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -45,6 +87,18 @@ export type Database = {
         Returns: {
           allowed: boolean
           used: number
+        }[]
+      }
+      match_brain_items: {
+        Args: { match_count?: number; query_embedding: string }
+        Returns: {
+          content: string
+          id: string
+          language: string
+          similarity: number
+          source_url: string
+          tags: string[]
+          title: string
         }[]
       }
     }
