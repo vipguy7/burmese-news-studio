@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUsageRouteImport } from './routes/api/usage'
 import { Route as ApiGenerateRouteImport } from './routes/api/generate'
 import { Route as ApiEditRouteImport } from './routes/api/edit'
+import { Route as ApiBrainSaveRouteImport } from './routes/api/brain/save'
+import { Route as ApiBrainListRouteImport } from './routes/api/brain/list'
+import { Route as ApiBrainDeleteRouteImport } from './routes/api/brain/delete'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +37,39 @@ const ApiEditRoute = ApiEditRouteImport.update({
   path: '/api/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBrainSaveRoute = ApiBrainSaveRouteImport.update({
+  id: '/api/brain/save',
+  path: '/api/brain/save',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBrainListRoute = ApiBrainListRouteImport.update({
+  id: '/api/brain/list',
+  path: '/api/brain/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBrainDeleteRoute = ApiBrainDeleteRouteImport.update({
+  id: '/api/brain/delete',
+  path: '/api/brain/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/api/brain/delete': typeof ApiBrainDeleteRoute
+  '/api/brain/list': typeof ApiBrainListRoute
+  '/api/brain/save': typeof ApiBrainSaveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/api/brain/delete': typeof ApiBrainDeleteRoute
+  '/api/brain/list': typeof ApiBrainListRoute
+  '/api/brain/save': typeof ApiBrainSaveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +77,38 @@ export interface FileRoutesById {
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/api/brain/delete': typeof ApiBrainDeleteRoute
+  '/api/brain/list': typeof ApiBrainListRoute
+  '/api/brain/save': typeof ApiBrainSaveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/edit' | '/api/generate' | '/api/usage'
+  fullPaths:
+    | '/'
+    | '/api/edit'
+    | '/api/generate'
+    | '/api/usage'
+    | '/api/brain/delete'
+    | '/api/brain/list'
+    | '/api/brain/save'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/edit' | '/api/generate' | '/api/usage'
-  id: '__root__' | '/' | '/api/edit' | '/api/generate' | '/api/usage'
+  to:
+    | '/'
+    | '/api/edit'
+    | '/api/generate'
+    | '/api/usage'
+    | '/api/brain/delete'
+    | '/api/brain/list'
+    | '/api/brain/save'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/edit'
+    | '/api/generate'
+    | '/api/usage'
+    | '/api/brain/delete'
+    | '/api/brain/list'
+    | '/api/brain/save'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +116,9 @@ export interface RootRouteChildren {
   ApiEditRoute: typeof ApiEditRoute
   ApiGenerateRoute: typeof ApiGenerateRoute
   ApiUsageRoute: typeof ApiUsageRoute
+  ApiBrainDeleteRoute: typeof ApiBrainDeleteRoute
+  ApiBrainListRoute: typeof ApiBrainListRoute
+  ApiBrainSaveRoute: typeof ApiBrainSaveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +151,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/brain/save': {
+      id: '/api/brain/save'
+      path: '/api/brain/save'
+      fullPath: '/api/brain/save'
+      preLoaderRoute: typeof ApiBrainSaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/brain/list': {
+      id: '/api/brain/list'
+      path: '/api/brain/list'
+      fullPath: '/api/brain/list'
+      preLoaderRoute: typeof ApiBrainListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/brain/delete': {
+      id: '/api/brain/delete'
+      path: '/api/brain/delete'
+      fullPath: '/api/brain/delete'
+      preLoaderRoute: typeof ApiBrainDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +180,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEditRoute: ApiEditRoute,
   ApiGenerateRoute: ApiGenerateRoute,
   ApiUsageRoute: ApiUsageRoute,
+  ApiBrainDeleteRoute: ApiBrainDeleteRoute,
+  ApiBrainListRoute: ApiBrainListRoute,
+  ApiBrainSaveRoute: ApiBrainSaveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
