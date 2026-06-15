@@ -1,0 +1,1 @@
+revoke execute on function public.match_brain_items(vector, int) from authenticated;
