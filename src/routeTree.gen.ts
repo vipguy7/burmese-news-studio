@@ -9,16 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SportRouteImport } from './routes/sport'
 import { Route as BrainRouteImport } from './routes/brain'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUsageRouteImport } from './routes/api/usage'
 import { Route as ApiGenerateRouteImport } from './routes/api/generate'
 import { Route as ApiEditRouteImport } from './routes/api/edit'
+import { Route as ApiSportGenerateRouteImport } from './routes/api/sport/generate'
 import { Route as ApiBrainTranslateRouteImport } from './routes/api/brain/translate'
 import { Route as ApiBrainSaveRouteImport } from './routes/api/brain/save'
 import { Route as ApiBrainListRouteImport } from './routes/api/brain/list'
 import { Route as ApiBrainDeleteRouteImport } from './routes/api/brain/delete'
 
+const SportRoute = SportRouteImport.update({
+  id: '/sport',
+  path: '/sport',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrainRoute = BrainRouteImport.update({
   id: '/brain',
   path: '/brain',
@@ -42,6 +49,11 @@ const ApiGenerateRoute = ApiGenerateRouteImport.update({
 const ApiEditRoute = ApiEditRouteImport.update({
   id: '/api/edit',
   path: '/api/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSportGenerateRoute = ApiSportGenerateRouteImport.update({
+  id: '/api/sport/generate',
+  path: '/api/sport/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBrainTranslateRoute = ApiBrainTranslateRouteImport.update({
@@ -68,6 +80,7 @@ const ApiBrainDeleteRoute = ApiBrainDeleteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brain': typeof BrainRoute
+  '/sport': typeof SportRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
@@ -75,10 +88,12 @@ export interface FileRoutesByFullPath {
   '/api/brain/list': typeof ApiBrainListRoute
   '/api/brain/save': typeof ApiBrainSaveRoute
   '/api/brain/translate': typeof ApiBrainTranslateRoute
+  '/api/sport/generate': typeof ApiSportGenerateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brain': typeof BrainRoute
+  '/sport': typeof SportRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
@@ -86,11 +101,13 @@ export interface FileRoutesByTo {
   '/api/brain/list': typeof ApiBrainListRoute
   '/api/brain/save': typeof ApiBrainSaveRoute
   '/api/brain/translate': typeof ApiBrainTranslateRoute
+  '/api/sport/generate': typeof ApiSportGenerateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/brain': typeof BrainRoute
+  '/sport': typeof SportRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
@@ -98,12 +115,14 @@ export interface FileRoutesById {
   '/api/brain/list': typeof ApiBrainListRoute
   '/api/brain/save': typeof ApiBrainSaveRoute
   '/api/brain/translate': typeof ApiBrainTranslateRoute
+  '/api/sport/generate': typeof ApiSportGenerateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/brain'
+    | '/sport'
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
@@ -111,10 +130,12 @@ export interface FileRouteTypes {
     | '/api/brain/list'
     | '/api/brain/save'
     | '/api/brain/translate'
+    | '/api/sport/generate'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/brain'
+    | '/sport'
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
@@ -122,10 +143,12 @@ export interface FileRouteTypes {
     | '/api/brain/list'
     | '/api/brain/save'
     | '/api/brain/translate'
+    | '/api/sport/generate'
   id:
     | '__root__'
     | '/'
     | '/brain'
+    | '/sport'
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
@@ -133,11 +156,13 @@ export interface FileRouteTypes {
     | '/api/brain/list'
     | '/api/brain/save'
     | '/api/brain/translate'
+    | '/api/sport/generate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrainRoute: typeof BrainRoute
+  SportRoute: typeof SportRoute
   ApiEditRoute: typeof ApiEditRoute
   ApiGenerateRoute: typeof ApiGenerateRoute
   ApiUsageRoute: typeof ApiUsageRoute
@@ -145,10 +170,18 @@ export interface RootRouteChildren {
   ApiBrainListRoute: typeof ApiBrainListRoute
   ApiBrainSaveRoute: typeof ApiBrainSaveRoute
   ApiBrainTranslateRoute: typeof ApiBrainTranslateRoute
+  ApiSportGenerateRoute: typeof ApiSportGenerateRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sport': {
+      id: '/sport'
+      path: '/sport'
+      fullPath: '/sport'
+      preLoaderRoute: typeof SportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/brain': {
       id: '/brain'
       path: '/brain'
@@ -182,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/api/edit'
       fullPath: '/api/edit'
       preLoaderRoute: typeof ApiEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sport/generate': {
+      id: '/api/sport/generate'
+      path: '/api/sport/generate'
+      fullPath: '/api/sport/generate'
+      preLoaderRoute: typeof ApiSportGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/brain/translate': {
@@ -218,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrainRoute: BrainRoute,
+  SportRoute: SportRoute,
   ApiEditRoute: ApiEditRoute,
   ApiGenerateRoute: ApiGenerateRoute,
   ApiUsageRoute: ApiUsageRoute,
@@ -225,17 +266,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBrainListRoute: ApiBrainListRoute,
   ApiBrainSaveRoute: ApiBrainSaveRoute,
   ApiBrainTranslateRoute: ApiBrainTranslateRoute,
+  ApiSportGenerateRoute: ApiSportGenerateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
