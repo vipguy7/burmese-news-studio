@@ -6,6 +6,7 @@ import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
 import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
+import { buildNamePromptTable, normalizeBurmeseNames, type NameEntry } from "@/lib/sport-name-map";
 
 const Body = z.object({
   sourceKind: z.enum(["url", "text"]),
@@ -80,32 +81,54 @@ export const Route = createFileRoute("/api/sport/generate")({
           }
         }
 
-        // 2) Pull Burmese-sport reference items from the second brain (tag = 'sport').
+        // 2) Pull Burmese-sport reference items + name-map overrides from the second brain.
+        //    - tag 'sport'        → general glossary / style notes
+        //    - tag 'sport-name'   → English→Burmese name overrides (title=English, content=Burmese[, line2=short])
         let brainContext = "";
+        const nameOverrides: Record<string, NameEntry> = {};
         if (body.use_brain) {
           try {
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-            type Row = { title: string; content: string };
+            type Row = { title: string; content: string; tags: string[] };
             const admin = supabaseAdmin as unknown as {
               from: (t: string) => {
                 select: (cols: string) => {
-                  contains: (col: string, val: string[]) => {
+                  overlaps: (col: string, val: string[]) => {
                     limit: (n: number) => Promise<{ data: Row[] | null }>;
                   };
                 };
               };
             };
             const { data } = await admin.from("brain_items")
-              .select("title, content")
-              .contains("tags", ["sport"])
-              .limit(20);
-            if (data && data.length) {
-              brainContext = data.map((r) => `• ${r.title}: ${r.content.slice(0, 600)}`).join("\n");
+              .select("title, content, tags")
+              .overlaps("tags", ["sport", "sport-name"])
+              .limit(80);
+            const glossaryRows: Row[] = [];
+            for (const r of data ?? []) {
+              if (r.tags?.includes("sport-name")) {
+                const [my, short] = r.content.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+                if (my) {
+                  nameOverrides[r.title.trim()] = {
+                    my,
+                    short: short || undefined,
+                    kind: "club",
+                  };
+                }
+              } else {
+                glossaryRows.push(r);
+              }
+            }
+            if (glossaryRows.length) {
+              brainContext = glossaryRows
+                .map((r) => `• ${r.title}: ${r.content.slice(0, 600)}`)
+                .join("\n");
             }
           } catch (e) { console.error("[sport/generate] brain fetch", e); }
         }
 
-        const key = await hashKey({ kind: "sport", userId, ...body, sourceText });
+        const nameTable = buildNamePromptTable(nameOverrides);
+
+        const key = await hashKey({ kind: "sport", userId, ...body, sourceText, nameTable });
         const cached = cacheGet(key);
         if (cached) return Response.json({ ...JSON.parse(cached), cached: true });
 
@@ -131,7 +154,10 @@ ABSOLUTE RULES:
 2. Output ONLY the finished piece. No labels ("Intro:", "Summary:", "နိဒါန်း：" etc.), no markdown, no bullet lists unless the format genuinely needs them, no meta commentary like "Here is your article".
 3. For Burmese output use modern Myanmar Unicode only. Use the Burmese forms of football vocabulary that fans actually use (see REFERENCE GLOSSARY when provided). Latin player and club names that have no settled Burmese form stay in Latin.
 4. Keep paragraphs short and readable. Conversational, never stiff.
-5. Spell well-known names consistently with how Burmese-language sports pages normally render them.${body.notes ? `\n\nEXTRA EDITOR NOTES: ${body.notes}` : ""}`;
+5. NAME CONSISTENCY: When a club, national team, competition, stadium, player, or manager appears in the NAME NORMALIZATION TABLE below, you MUST use the canonical Burmese spelling shown — never invent an alternative transliteration, never mix Latin and Burmese forms for the same entity within one article. On first mention use the full form; on later mentions the short form (if listed) is fine. Names NOT in the table stay in Latin script.${body.notes ? `\n\nEXTRA EDITOR NOTES: ${body.notes}` : ""}
+
+NAME NORMALIZATION TABLE (English → canonical Burmese):
+${nameTable}`;
 
         const userPrompt = `${brainContext ? `REFERENCE GLOSSARY & STYLE NOTES (Burmese sport vocabulary — use this when picking words):
 ${brainContext}
@@ -139,11 +165,17 @@ ${brainContext}
 ` : ""}SOURCE MATERIAL:
 ${sourceText}
 
-Now write the ${body.contentType.replace("_", " ")} following every rule.`;
+Now write the ${body.contentType.replace("_", " ")} following every rule, especially NAME CONSISTENCY.`;
 
         try {
           const out = await generateText({ model, system, prompt: userPrompt });
-          const cleaned = cleanNarrative(out.text);
+          const rawCleaned = cleanNarrative(out.text);
+          const cleaned = body.outputLanguage === "english"
+            ? rawCleaned
+            : normalizeBurmeseNames(rawCleaned, {
+                extra: nameOverrides,
+                bilingual: body.outputLanguage === "bilingual",
+              });
 
           // Lightweight SEO/categorization
           let seo = { title: "", metaDescription: "", hashtags: [] as string[] };
