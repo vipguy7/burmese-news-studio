@@ -152,7 +152,7 @@ export function buildNamePromptTable(extra?: Record<string, NameEntry>): string 
 
 /** Escape a string for use inside a RegExp. */
 function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$1".replace("$1", "\\$&"));
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
