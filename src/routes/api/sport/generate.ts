@@ -6,6 +6,7 @@ import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
 import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
+import { buildNamePromptTable, normalizeBurmeseNames, type NameEntry } from "@/lib/sport-name-map";
 
 const Body = z.object({
   sourceKind: z.enum(["url", "text"]),
