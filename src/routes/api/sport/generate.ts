@@ -169,7 +169,13 @@ Now write the ${body.contentType.replace("_", " ")} following every rule, especi
 
         try {
           const out = await generateText({ model, system, prompt: userPrompt });
-          const cleaned = cleanNarrative(out.text);
+          const rawCleaned = cleanNarrative(out.text);
+          const cleaned = body.outputLanguage === "english"
+            ? rawCleaned
+            : normalizeBurmeseNames(rawCleaned, {
+                extra: nameOverrides,
+                bilingual: body.outputLanguage === "bilingual",
+              });
 
           // Lightweight SEO/categorization
           let seo = { title: "", metaDescription: "", hashtags: [] as string[] };
