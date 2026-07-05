@@ -16,7 +16,7 @@ export default defineTool({
     tags: z.array(z.string().max(40)).max(12).default([]).describe("Freeform tags. Use 'sport' or 'sport-name' for sport-desk items."),
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  handler: async ({ title, content, source_url, source_type, language, tags }, ctx) => {
+  handler: async ({ title, content, source_url, source_type = "text", language = "unknown", tags = [] }, ctx) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
