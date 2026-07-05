@@ -31,7 +31,7 @@ export default defineTool({
     const { data, error } = await supabase
       .from("brain_items")
       .insert({
-        created_by: ctx.getUserId(),
+        created_by: ctx.getUserId()!,
         title,
         content,
         source_url: source_url ?? null,

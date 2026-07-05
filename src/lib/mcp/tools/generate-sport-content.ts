@@ -71,7 +71,7 @@ export default defineTool({
     }
 
     let brainContext = "";
-    const nameOverrides: Record<string, { my: string; short?: string; kind: string }> = {};
+    const nameOverrides: Record<string, import("@/lib/sport-name-map").NameEntry> = {};
     if (use_brain) {
       try {
         const supabase = supabaseForUser(ctx);
