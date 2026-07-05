@@ -10,20 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SportRouteImport } from './routes/sport'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as BrainRouteImport } from './routes/brain'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUsageRouteImport } from './routes/api/usage'
 import { Route as ApiGenerateRouteImport } from './routes/api/generate'
 import { Route as ApiEditRouteImport } from './routes/api/edit'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiSportGenerateRouteImport } from './routes/api/sport/generate'
 import { Route as ApiBrainTranslateRouteImport } from './routes/api/brain/translate'
 import { Route as ApiBrainSaveRouteImport } from './routes/api/brain/save'
 import { Route as ApiBrainListRouteImport } from './routes/api/brain/list'
 import { Route as ApiBrainDeleteRouteImport } from './routes/api/brain/delete'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 
 const SportRoute = SportRouteImport.update({
   id: '/sport',
   path: '/sport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrainRoute = BrainRouteImport.update({
@@ -51,6 +60,18 @@ const ApiEditRoute = ApiEditRouteImport.update({
   path: '/api/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSportGenerateRoute = ApiSportGenerateRouteImport.update({
   id: '/api/sport/generate',
   path: '/api/sport/generate',
@@ -76,14 +97,24 @@ const ApiBrainDeleteRoute = ApiBrainDeleteRouteImport.update({
   path: '/api/brain/delete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brain': typeof BrainRoute
+  '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/brain/delete': typeof ApiBrainDeleteRoute
   '/api/brain/list': typeof ApiBrainListRoute
   '/api/brain/save': typeof ApiBrainSaveRoute
@@ -93,10 +124,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brain': typeof BrainRoute
+  '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/brain/delete': typeof ApiBrainDeleteRoute
   '/api/brain/list': typeof ApiBrainListRoute
   '/api/brain/save': typeof ApiBrainSaveRoute
@@ -107,10 +142,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/brain': typeof BrainRoute
+  '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/brain/delete': typeof ApiBrainDeleteRoute
   '/api/brain/list': typeof ApiBrainListRoute
   '/api/brain/save': typeof ApiBrainSaveRoute
@@ -122,10 +161,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/brain'
+    | '/mcp'
     | '/sport'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/brain/delete'
     | '/api/brain/list'
     | '/api/brain/save'
@@ -135,10 +178,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/brain'
+    | '/mcp'
     | '/sport'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/brain/delete'
     | '/api/brain/list'
     | '/api/brain/save'
@@ -148,10 +195,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/brain'
+    | '/mcp'
     | '/sport'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/brain/delete'
     | '/api/brain/list'
     | '/api/brain/save'
@@ -162,10 +213,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrainRoute: typeof BrainRoute
+  McpRoute: typeof McpRoute
   SportRoute: typeof SportRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiEditRoute: typeof ApiEditRoute
   ApiGenerateRoute: typeof ApiGenerateRoute
   ApiUsageRoute: typeof ApiUsageRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiBrainDeleteRoute: typeof ApiBrainDeleteRoute
   ApiBrainListRoute: typeof ApiBrainListRoute
   ApiBrainSaveRoute: typeof ApiBrainSaveRoute
@@ -180,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/sport'
       fullPath: '/sport'
       preLoaderRoute: typeof SportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brain': {
@@ -217,6 +279,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sport/generate': {
       id: '/api/sport/generate'
       path: '/api/sport/generate'
@@ -252,16 +328,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBrainDeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrainRoute: BrainRoute,
+  McpRoute: McpRoute,
   SportRoute: SportRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiEditRoute: ApiEditRoute,
   ApiGenerateRoute: ApiGenerateRoute,
   ApiUsageRoute: ApiUsageRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiBrainDeleteRoute: ApiBrainDeleteRoute,
   ApiBrainListRoute: ApiBrainListRoute,
   ApiBrainSaveRoute: ApiBrainSaveRoute,
