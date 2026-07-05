@@ -24,6 +24,7 @@ import { Route as ApiBrainSaveRouteImport } from './routes/api/brain/save'
 import { Route as ApiBrainListRouteImport } from './routes/api/brain/list'
 import { Route as ApiBrainDeleteRouteImport } from './routes/api/brain/delete'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 
 const SportRoute = SportRouteImport.update({
   id: '/sport',
@@ -103,6 +104,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/brain/delete': typeof ApiBrainDeleteRoute
   '/api/brain/list': typeof ApiBrainListRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/brain/delete': typeof ApiBrainDeleteRoute
   '/api/brain/list': typeof ApiBrainListRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/api/edit': typeof ApiEditRoute
   '/api/generate': typeof ApiGenerateRoute
   '/api/usage': typeof ApiUsageRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/brain/delete': typeof ApiBrainDeleteRoute
   '/api/brain/list': typeof ApiBrainListRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/brain/delete'
     | '/api/brain/list'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/brain/delete'
     | '/api/brain/list'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/api/edit'
     | '/api/generate'
     | '/api/usage'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/brain/delete'
     | '/api/brain/list'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   ApiEditRoute: typeof ApiEditRoute
   ApiGenerateRoute: typeof ApiGenerateRoute
   ApiUsageRoute: typeof ApiUsageRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiBrainDeleteRoute: typeof ApiBrainDeleteRoute
   ApiBrainListRoute: typeof ApiBrainListRoute
@@ -335,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -349,6 +369,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEditRoute: ApiEditRoute,
   ApiGenerateRoute: ApiGenerateRoute,
   ApiUsageRoute: ApiUsageRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiBrainDeleteRoute: ApiBrainDeleteRoute,
   ApiBrainListRoute: ApiBrainListRoute,
