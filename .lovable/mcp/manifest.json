@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://gqzztkoikxsxyopwsxit.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "burmese-news-studio-mcp",
+      "version": "0.1.0",
+      "title": "Burmese News Studio"
+    },
+    "tools": [
+      {
+        "name": "list_brain_items",
+        "title": "List brain items",
+        "description": "List the most recent items in the shared newsroom knowledge base ('second brain'). Optionally filter by tag (e.g. 'sport', 'sport-name') or free-text substring match on the title.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "default": 20,
+              "description": "Max items to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "tag": {
+              "description": "Return only items whose tags array contains this tag.",
+              "type": "string",
+              "maxLength": 40
+            },
+            "title_contains": {
+              "description": "Case-insensitive substring match on title.",
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_brain_items",
+        "title": "Semantic search brain items",
+        "description": "Semantic search over the shared newsroom knowledge base using vector similarity. Returns the items most relevant to the query.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000,
+              "description": "Natural-language query to match against stored items."
+            },
+            "match_count": {
+              "default": 6,
+              "description": "Max items to return.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "save_brain_item",
+        "title": "Save brain item",
+        "description": "Save a new item into the shared newsroom knowledge base ('second brain'). The item becomes available for future semantic recall and format generation.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60000,
+              "description": "Full text body: notes, transcript, article body, or research."
+            },
+            "source_url": {
+              "description": "Optional source URL.",
+              "type": "string",
+              "maxLength": 2000,
+              "format": "uri"
+            },
+            "source_type": {
+              "default": "text",
+              "type": "string",
+              "enum": [
+                "text",
+                "url",
+                "note",
+                "transcript"
+              ]
+            },
+            "language": {
+              "default": "unknown",
+              "type": "string",
+              "enum": [
+                "burmese",
+                "english",
+                "mixed",
+                "unknown"
+              ]
+            },
+            "tags": {
+              "default": [],
+              "description": "Freeform tags. Use 'sport' or 'sport-name' for sport-desk items.",
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 40
+              }
+            }
+          },
+          "required": [
+            "title",
+            "content"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "translate_from_brain",
+        "title": "Translate & rewrite from brain",
+        "description": "Retrieval-augmented generation: pull knowledge-base items (explicitly by id or via semantic recall on the brief) and rewrite them into the chosen publishing format and language. Use for translating Burmese ↔ English and packaging into video script, web article, social post, or newsletter.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "brief": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4000,
+              "description": "What the piece should be about (angle, key facts, audience)."
+            },
+            "target_format": {
+              "type": "string",
+              "enum": [
+                "video_script",
+                "web_article",
+                "social_post",
+                "newsletter"
+              ]
+            },
+            "target_language": {
+              "type": "string",
+              "enum": [
+                "burmese-standard",
+                "burmese-long",
+                "english"
+              ]
+            },
+            "tone": {
+              "default": "professional",
+              "type": "string",
+              "enum": [
+                "professional",
+                "engaging",
+                "neutral"
+              ]
+            },
+            "item_ids": {
+              "default": [],
+              "description": "Optional brain_items ids to include as primary sources.",
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "use_semantic_recall": {
+              "default": true,
+              "description": "Also recall additional items by vector similarity to the brief.",
+              "type": "boolean"
+            },
+            "recall_count": {
+              "default": 5,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          },
+          "required": [
+            "brief",
+            "target_format",
+            "target_language"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "generate_sport_content",
+        "title": "Generate Burmese sport content",
+        "description": "Take an English (or mixed) sports source URL or raw text and generate a Burmese fan-first football/sports article. Chooses format (match review/preview/analysis/highlights/player profile/general), tone, and language. Uses the shared brain's Burmese sport glossary and name-normalization overrides for consistent club/player spellings.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "sourceKind": {
+              "type": "string",
+              "enum": [
+                "url",
+                "text"
+              ],
+              "description": "'url' scrapes the article; 'text' uses the string directly."
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60000
+            },
+            "contentType": {
+              "type": "string",
+              "enum": [
+                "match_review",
+                "match_preview",
+                "match_analysis",
+                "highlights",
+                "player_profile",
+                "general"
+              ]
+            },
+            "outputLanguage": {
+              "default": "burmese-casual",
+              "type": "string",
+              "enum": [
+                "burmese-casual",
+                "english",
+                "bilingual"
+              ]
+            },
+            "tone": {
+              "default": "casual",
+              "type": "string",
+              "enum": [
+                "casual",
+                "hype",
+                "analytical"
+              ]
+            },
+            "notes": {
+              "description": "Optional editor notes for angle / must-mentions.",
+              "type": "string",
+              "maxLength": 2000
+            },
+            "use_brain": {
+              "default": true,
+              "description": "Load Burmese sport glossary + name overrides from the brain.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "sourceKind",
+            "source",
+            "contentType"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
