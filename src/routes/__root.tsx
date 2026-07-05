@@ -72,14 +72,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Burmese News Studio" },
+      { title: "Sport Translator vr 1.2" },
       {
         name: "description",
         content:
           "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards.",
       },
       { name: "author", content: "Newsroom" },
-      { property: "og:title", content: "Burmese News Studio" },
+      { property: "og:title", content: "Sport Translator vr 1.2" },
       {
         property: "og:description",
         content:
@@ -87,12 +87,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Burmese News Studio" },
-      { name: "description", content: "- Transform Web News to Social Media post or Video Narration Scriptn- Write translated news article from web link" },
-      { property: "og:description", content: "- Transform Web News to Social Media post or Video Narration Scriptn- Write translated news article from web link" },
-      { name: "twitter:description", content: "- Transform Web News to Social Media post or Video Narration Scriptn- Write translated news article from web link" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6ecb4b78-c5e0-47e6-b5a4-87451e103a5f" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6ecb4b78-c5e0-47e6-b5a4-87451e103a5f" },
+      { name: "twitter:title", content: "Sport Translator vr 1.2" },
+      { name: "description", content: "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards." },
+      { property: "og:description", content: "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards." },
+      { name: "twitter:description", content: "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a81bbd9b-fc06-4772-a744-1443cb1aebad" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a81bbd9b-fc06-4772-a744-1443cb1aebad" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
