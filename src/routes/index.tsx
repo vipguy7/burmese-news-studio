@@ -171,6 +171,12 @@ function Newsroom() {
           <Trophy className="w-4 h-4" /> Sport Desk
         </Link>
         <Link
+          to="/srt"
+          className="px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Captions className="w-4 h-4" /> Subtitle Desk
+        </Link>
+        <Link
           to="/brain"
           className="px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
