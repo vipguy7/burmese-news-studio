@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SrtRouteImport } from './routes/srt'
 import { Route as SportRouteImport } from './routes/sport'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as BrainRouteImport } from './routes/brain'
@@ -27,6 +28,11 @@ import { Route as ApiBrainDeleteRouteImport } from './routes/api/brain/delete'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 
+const SrtRoute = SrtRouteImport.update({
+  id: '/srt',
+  path: '/srt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SportRoute = SportRouteImport.update({
   id: '/sport',
   path: '/sport',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/brain': typeof BrainRoute
   '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
+  '/srt': typeof SrtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/brain': typeof BrainRoute
   '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
+  '/srt': typeof SrtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/brain': typeof BrainRoute
   '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
+  '/srt': typeof SrtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/brain'
     | '/mcp'
     | '/sport'
+    | '/srt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/brain'
     | '/mcp'
     | '/sport'
+    | '/srt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/brain'
     | '/mcp'
     | '/sport'
+    | '/srt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   BrainRoute: typeof BrainRoute
   McpRoute: typeof McpRoute
   SportRoute: typeof SportRoute
+  SrtRoute: typeof SrtRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiEditRoute: typeof ApiEditRoute
@@ -256,6 +269,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/srt': {
+      id: '/srt'
+      path: '/srt'
+      fullPath: '/srt'
+      preLoaderRoute: typeof SrtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sport': {
       id: '/sport'
       path: '/sport'
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrainRoute: BrainRoute,
   McpRoute: McpRoute,
   SportRoute: SportRoute,
+  SrtRoute: SrtRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
