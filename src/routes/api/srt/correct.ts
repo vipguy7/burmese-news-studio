@@ -10,6 +10,8 @@ const Body = z.object({
   use_ai: z.boolean().default(true),
   max_chars: z.number().int().min(20).max(80).default(42),
   max_lines: z.number().int().min(1).max(3).default(2),
+  max_words_per_line: z.number().int().min(3).max(20).default(10),
+  split_long_cues: z.boolean().default(true),
   extra_notes: z.string().max(2000).optional().default(""),
 });
 
@@ -78,6 +80,111 @@ function wrapCue(text: string, maxChars: number, maxLines: number): string {
   }
   if (remaining) lines[lines.length - 1] = (lines[lines.length - 1] + " " + remaining).trim();
   return lines.join("\n");
+}
+
+// --- Timecode utilities ---------------------------------------------------
+
+function tsToMs(s: string): number {
+  const m = s.match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/);
+  if (!m) return 0;
+  return +m[1] * 3_600_000 + +m[2] * 60_000 + +m[3] * 1000 + +m[4];
+}
+
+function msToTs(ms: number): string {
+  ms = Math.max(0, Math.round(ms));
+  const h = Math.floor(ms / 3_600_000);
+  ms -= h * 3_600_000;
+  const m = Math.floor(ms / 60_000);
+  ms -= m * 60_000;
+  const s = Math.floor(ms / 1000);
+  const r = ms - s * 1000;
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  return `${p2(h)}:${p2(m)}:${p2(s)},${String(r).padStart(3, "0")}`;
+}
+
+function parseRange(ts: string): { start: number; end: number } {
+  const [a, b] = ts.split("-->").map((x) => x.trim());
+  return { start: tsToMs(a), end: tsToMs(b) };
+}
+
+// Tokenize into "words". For Burmese without spaces, split at particle boundaries.
+function tokenize(text: string): string[] {
+  const collapsed = text.replace(/\s+/g, " ").trim();
+  if (!collapsed) return [];
+  const spaced = collapsed.split(" ").filter(Boolean);
+  if (spaced.length > 1) return spaced;
+  // Single run of script — split at particle boundaries.
+  const tokens: string[] = [];
+  let buf = collapsed;
+  let guard = 0;
+  while (buf.length > 0 && guard++ < 500) {
+    let cut = -1;
+    for (const p of BREAK_PARTICLES) {
+      const idx = buf.indexOf(p);
+      if (idx > 0) {
+        const end = idx + p.length;
+        if (cut < 0 || end < cut) cut = end;
+      }
+    }
+    if (cut <= 0 || cut >= buf.length) {
+      tokens.push(buf);
+      break;
+    }
+    tokens.push(buf.slice(0, cut));
+    buf = buf.slice(cut).replace(/^\s+/, "");
+  }
+  return tokens.filter(Boolean);
+}
+
+function wrapTokens(tokens: string[], maxWordsPerLine: number, maxLines: number, joiner: string): string {
+  if (tokens.length === 0) return "";
+  const lines: string[] = [];
+  const cap = maxLines * maxWordsPerLine;
+  const use = tokens.slice(0, cap);
+  const overflow = tokens.slice(cap);
+  for (let i = 0; i < use.length; i += maxWordsPerLine) {
+    lines.push(use.slice(i, i + maxWordsPerLine).join(joiner));
+  }
+  if (overflow.length) lines[lines.length - 1] += joiner + overflow.join(joiner);
+  return lines.join("\n");
+}
+
+// Split one long cue into multiple sequential cues, distributing time proportionally.
+// Netflix-inspired: max 2 lines × N words per line; new cues get proportional timecodes.
+function splitAndWrap(
+  cue: Cue,
+  maxWordsPerLine: number,
+  maxLines: number,
+  split: boolean,
+): Cue[] {
+  const tokens = tokenize(cue.text);
+  const perCue = maxWordsPerLine * maxLines;
+  const spaced = cue.text.replace(/\s+/g, " ").trim().includes(" ");
+  const joiner = spaced ? " " : "";
+  if (!split || tokens.length <= perCue) {
+    return [{ ...cue, text: wrapTokens(tokens, maxWordsPerLine, maxLines, joiner) }];
+  }
+  const { start, end } = parseRange(cue.timestamp);
+  const total = tokens.length;
+  const chunks: string[][] = [];
+  for (let i = 0; i < total; i += perCue) chunks.push(tokens.slice(i, i + perCue));
+  const dur = Math.max(0, end - start);
+  const out: Cue[] = [];
+  let consumed = 0;
+  const MIN_MS = 700; // Netflix min duration guardrail
+  for (let i = 0; i < chunks.length; i++) {
+    const words = chunks[i].length;
+    const cStart = start + Math.round((consumed / total) * dur);
+    consumed += words;
+    let cEnd = start + Math.round((consumed / total) * dur);
+    if (cEnd - cStart < MIN_MS) cEnd = cStart + MIN_MS;
+    out.push({
+      index: "0",
+      timestamp: `${msToTs(cStart)} --> ${msToTs(cEnd)}`,
+      text: wrapTokens(chunks[i], maxWordsPerLine, maxLines, joiner),
+    });
+  }
+  return out;
 }
 
 const GLOSSARY_TITLE = "SRT Burmese Glossary";
@@ -297,12 +404,23 @@ export const Route = createFileRoute("/api/srt/correct")({
           }
         }
 
-        // Wrap cues
+        // Split long cues by word count and re-wrap; assign fresh sequential indices.
+        const rebuilt: Cue[] = [];
         for (const c of cues) {
-          const wrapped = wrapCue(c.text, body.max_chars, body.max_lines);
-          if (wrapped.split("\n").some((l) => l.length > body.max_chars)) overflow.push(c.index);
-          c.text = wrapped;
+          const pieces = splitAndWrap(c, body.max_words_per_line, body.max_lines, body.split_long_cues);
+          for (const p of pieces) rebuilt.push(p);
         }
+        // Also enforce char-limit overflow reporting on the wrapped output.
+        for (let i = 0; i < rebuilt.length; i++) {
+          rebuilt[i].index = String(i + 1);
+          if (rebuilt[i].text.split("\n").some((l) => l.length > body.max_chars)) {
+            overflow.push(rebuilt[i].index);
+          }
+        }
+        const splitCount = rebuilt.length - cues.length;
+        // Replace original cues with the rebuilt list.
+        cues.length = 0;
+        cues.push(...rebuilt);
 
         // Save updated glossary
         try {
@@ -320,6 +438,7 @@ export const Route = createFileRoute("/api/srt/correct")({
             new_glossary_entries: newEntries,
             overflow_cues: overflow,
             glossary_size: Object.keys(corrections).length,
+            split_cues_added: splitCount,
           },
         });
       },

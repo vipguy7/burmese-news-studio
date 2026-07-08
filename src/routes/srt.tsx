@@ -35,6 +35,7 @@ type Stats = {
   new_glossary_entries: number;
   overflow_cues: string[];
   glossary_size: number;
+  split_cues_added: number;
 };
 
 function SrtStudio() {
@@ -43,6 +44,8 @@ function SrtStudio() {
   const [useAi, setUseAi] = useState(true);
   const [maxChars, setMaxChars] = useState(42);
   const [maxLines, setMaxLines] = useState(2);
+  const [maxWordsPerLine, setMaxWordsPerLine] = useState(10);
+  const [splitLongCues, setSplitLongCues] = useState(true);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +76,8 @@ function SrtStudio() {
           use_ai: useAi,
           max_chars: maxChars,
           max_lines: maxLines,
+          max_words_per_line: maxWordsPerLine,
+          split_long_cues: splitLongCues,
           extra_notes: notes,
         }),
       });
@@ -184,6 +189,31 @@ function SrtStudio() {
               </label>
             </div>
 
+            <div className="grid grid-cols-[1fr_auto] gap-4 items-end">
+              <label className="block">
+                <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
+                  Max words / line (Netflix style)
+                </span>
+                <input
+                  type="number"
+                  min={3}
+                  max={20}
+                  value={maxWordsPerLine}
+                  onChange={(e) => setMaxWordsPerLine(Number(e.target.value) || 10)}
+                  className="w-full bg-background border border-input px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm font-sans pb-2">
+                <input
+                  type="checkbox"
+                  checked={splitLongCues}
+                  onChange={(e) => setSplitLongCues(e.target.checked)}
+                  className="accent-primary w-4 h-4"
+                />
+                <span>Split long cues</span>
+              </label>
+            </div>
+
             <label className="block">
               <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
                 Extra notes for the reviewer (optional)
@@ -252,8 +282,10 @@ function SrtStudio() {
             <div className="border border-border bg-card p-5">
               <h3 className="font-display text-lg font-bold mb-3">Run summary</h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm font-sans">
-                <dt className="text-muted-foreground">Cues processed</dt>
+                <dt className="text-muted-foreground">Cues in output</dt>
                 <dd className="font-mono">{stats.cues}</dd>
+                <dt className="text-muted-foreground">New cues from splitting</dt>
+                <dd className="font-mono">{stats.split_cues_added ?? 0}</dd>
                 <dt className="text-muted-foreground">Glossary replacements</dt>
                 <dd className="font-mono">{stats.glossary_replacements}</dd>
                 <dt className="text-muted-foreground">AI corrections</dt>
