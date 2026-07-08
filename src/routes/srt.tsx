@@ -189,6 +189,31 @@ function SrtStudio() {
               </label>
             </div>
 
+            <div className="grid grid-cols-[1fr_auto] gap-4 items-end">
+              <label className="block">
+                <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
+                  Max words / line (Netflix style)
+                </span>
+                <input
+                  type="number"
+                  min={3}
+                  max={20}
+                  value={maxWordsPerLine}
+                  onChange={(e) => setMaxWordsPerLine(Number(e.target.value) || 10)}
+                  className="w-full bg-background border border-input px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm font-sans pb-2">
+                <input
+                  type="checkbox"
+                  checked={splitLongCues}
+                  onChange={(e) => setSplitLongCues(e.target.checked)}
+                  className="accent-primary w-4 h-4"
+                />
+                <span>Split long cues</span>
+              </label>
+            </div>
+
             <label className="block">
               <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
                 Extra notes for the reviewer (optional)
