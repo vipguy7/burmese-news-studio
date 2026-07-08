@@ -35,6 +35,7 @@ type Stats = {
   new_glossary_entries: number;
   overflow_cues: string[];
   glossary_size: number;
+  split_cues_added: number;
 };
 
 function SrtStudio() {
@@ -43,6 +44,8 @@ function SrtStudio() {
   const [useAi, setUseAi] = useState(true);
   const [maxChars, setMaxChars] = useState(42);
   const [maxLines, setMaxLines] = useState(2);
+  const [maxWordsPerLine, setMaxWordsPerLine] = useState(10);
+  const [splitLongCues, setSplitLongCues] = useState(true);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
