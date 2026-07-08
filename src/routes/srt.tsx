@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, Captions, Upload, Download, Home } from "lucide-react";
+import { Loader2, Captions, Upload, Download, Home, Film } from "lucide-react";
 import { Masthead } from "@/components/newsroom/Masthead";
 import { AuthGate } from "@/components/newsroom/AuthGate";
 import { CopyDownload } from "@/components/newsroom/CopyDownload";
@@ -106,6 +106,12 @@ function SrtStudio() {
         <div className="px-2 sm:px-4 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-primary">
           <Captions className="w-4 h-4" /> Subtitle Desk
         </div>
+        <Link
+          to="/srt-timeline"
+          className="px-2 py-3 text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
+          <Film className="w-3.5 h-3.5" /> Timeline Editor
+        </Link>
         <Link
           to="/"
           className="ml-auto text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
