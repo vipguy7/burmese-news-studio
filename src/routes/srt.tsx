@@ -282,8 +282,10 @@ function SrtStudio() {
             <div className="border border-border bg-card p-5">
               <h3 className="font-display text-lg font-bold mb-3">Run summary</h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm font-sans">
-                <dt className="text-muted-foreground">Cues processed</dt>
+                <dt className="text-muted-foreground">Cues in output</dt>
                 <dd className="font-mono">{stats.cues}</dd>
+                <dt className="text-muted-foreground">New cues from splitting</dt>
+                <dd className="font-mono">{stats.split_cues_added ?? 0}</dd>
                 <dt className="text-muted-foreground">Glossary replacements</dt>
                 <dd className="font-mono">{stats.glossary_replacements}</dd>
                 <dt className="text-muted-foreground">AI corrections</dt>
