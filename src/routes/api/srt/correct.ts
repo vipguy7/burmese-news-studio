@@ -438,6 +438,7 @@ export const Route = createFileRoute("/api/srt/correct")({
             new_glossary_entries: newEntries,
             overflow_cues: overflow,
             glossary_size: Object.keys(corrections).length,
+            split_cues_added: splitCount,
           },
         });
       },
