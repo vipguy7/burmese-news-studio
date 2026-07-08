@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SrtTimelineRouteImport } from './routes/srt-timeline'
 import { Route as SrtRouteImport } from './routes/srt'
 import { Route as SportRouteImport } from './routes/sport'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -28,6 +29,11 @@ import { Route as ApiBrainDeleteRouteImport } from './routes/api/brain/delete'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 
+const SrtTimelineRoute = SrtTimelineRouteImport.update({
+  id: '/srt-timeline',
+  path: '/srt-timeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SrtRoute = SrtRouteImport.update({
   id: '/srt',
   path: '/srt',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
   '/srt': typeof SrtRoute
+  '/srt-timeline': typeof SrtTimelineRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
   '/srt': typeof SrtRoute
+  '/srt-timeline': typeof SrtTimelineRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/sport': typeof SportRoute
   '/srt': typeof SrtRoute
+  '/srt-timeline': typeof SrtTimelineRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit': typeof ApiEditRoute
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/sport'
     | '/srt'
+    | '/srt-timeline'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit'
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/sport'
     | '/srt'
+    | '/srt-timeline'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/sport'
     | '/srt'
+    | '/srt-timeline'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit'
@@ -252,6 +264,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   SportRoute: typeof SportRoute
   SrtRoute: typeof SrtRoute
+  SrtTimelineRoute: typeof SrtTimelineRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiEditRoute: typeof ApiEditRoute
@@ -269,6 +282,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/srt-timeline': {
+      id: '/srt-timeline'
+      path: '/srt-timeline'
+      fullPath: '/srt-timeline'
+      preLoaderRoute: typeof SrtTimelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/srt': {
       id: '/srt'
       path: '/srt'
@@ -404,6 +424,7 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   SportRoute: SportRoute,
   SrtRoute: SrtRoute,
+  SrtTimelineRoute: SrtTimelineRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
