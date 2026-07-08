@@ -404,12 +404,23 @@ export const Route = createFileRoute("/api/srt/correct")({
           }
         }
 
-        // Wrap cues
+        // Split long cues by word count and re-wrap; assign fresh sequential indices.
+        const rebuilt: Cue[] = [];
         for (const c of cues) {
-          const wrapped = wrapCue(c.text, body.max_chars, body.max_lines);
-          if (wrapped.split("\n").some((l) => l.length > body.max_chars)) overflow.push(c.index);
-          c.text = wrapped;
+          const pieces = splitAndWrap(c, body.max_words_per_line, body.max_lines, body.split_long_cues);
+          for (const p of pieces) rebuilt.push(p);
         }
+        // Also enforce char-limit overflow reporting on the wrapped output.
+        for (let i = 0; i < rebuilt.length; i++) {
+          rebuilt[i].index = String(i + 1);
+          if (rebuilt[i].text.split("\n").some((l) => l.length > body.max_chars)) {
+            overflow.push(rebuilt[i].index);
+          }
+        }
+        const splitCount = rebuilt.length - cues.length;
+        // Replace original cues with the rebuilt list.
+        cues.length = 0;
+        cues.push(...rebuilt);
 
         // Save updated glossary
         try {
