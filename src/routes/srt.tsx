@@ -76,6 +76,8 @@ function SrtStudio() {
           use_ai: useAi,
           max_chars: maxChars,
           max_lines: maxLines,
+          max_words_per_line: maxWordsPerLine,
+          split_long_cues: splitLongCues,
           extra_notes: notes,
         }),
       });
