@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, Captions, Upload, Download, Home } from "lucide-react";
+import { Loader2, Captions, Upload, Download, Home, Film } from "lucide-react";
 import { Masthead } from "@/components/newsroom/Masthead";
 import { AuthGate } from "@/components/newsroom/AuthGate";
 import { CopyDownload } from "@/components/newsroom/CopyDownload";
