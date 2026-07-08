@@ -10,6 +10,8 @@ const Body = z.object({
   use_ai: z.boolean().default(true),
   max_chars: z.number().int().min(20).max(80).default(42),
   max_lines: z.number().int().min(1).max(3).default(2),
+  max_words_per_line: z.number().int().min(3).max(20).default(10),
+  split_long_cues: z.boolean().default(true),
   extra_notes: z.string().max(2000).optional().default(""),
 });
 
