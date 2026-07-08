@@ -107,6 +107,12 @@ function SrtStudio() {
           <Captions className="w-4 h-4" /> Subtitle Desk
         </div>
         <Link
+          to="/srt-timeline"
+          className="px-2 py-3 text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
+          <Film className="w-3.5 h-3.5" /> Timeline Editor
+        </Link>
+        <Link
           to="/"
           className="ml-auto text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
