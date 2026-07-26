@@ -158,7 +158,7 @@ function Newsroom() {
               aria-selected={active}
               onClick={() => setTab(t.id)}
               className={cn(
-                "shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 transition-colors",
+                "shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 transition-colors",
                 active
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
@@ -170,25 +170,25 @@ function Newsroom() {
         })}
         <Link
           to="/sport"
-          className="shrink-0 sm:ml-auto px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 sm:ml-auto px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
           <Trophy className="w-4 h-4 shrink-0" /> Sport Desk
         </Link>
         <Link
           to="/srt"
-          className="shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
           <Captions className="w-4 h-4 shrink-0" /> Subtitle Desk
         </Link>
         <Link
           to="/srt-timeline"
-          className="shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
           <Film className="w-4 h-4 shrink-0" /> Timeline
         </Link>
         <Link
           to="/brain"
-          className="shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
           <Brain className="w-4 h-4 shrink-0" /> Second Brain
         </Link>
