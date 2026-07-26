@@ -140,7 +140,11 @@ function Newsroom() {
       <Masthead />
 
       {/* Tabs */}
-      <nav className="flex border-b-2 border-foreground mb-8" role="tablist" aria-label="Newsroom sections">
+      <nav
+        className="flex w-full max-w-full items-stretch overflow-x-auto whitespace-nowrap border-b-2 border-foreground mb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label="Newsroom sections"
+      >
         {[
           { id: "generate" as const, label: "Script Architect", icon: Sparkles },
           { id: "edit" as const, label: "Proof-Editor", icon: ScanText },
@@ -154,41 +158,42 @@ function Newsroom() {
               aria-selected={active}
               onClick={() => setTab(t.id)}
               className={cn(
-                "px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 transition-colors",
+                "shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 transition-colors",
                 active
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
-              <Icon className="w-4 h-4" /> {t.label}
+              <Icon className="w-4 h-4 shrink-0" /> {t.label}
             </button>
           );
         })}
         <Link
           to="/sport"
-          className="ml-auto px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 sm:ml-auto px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Trophy className="w-4 h-4" /> Sport Desk
+          <Trophy className="w-4 h-4 shrink-0" /> Sport Desk
         </Link>
         <Link
           to="/srt"
-          className="px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Captions className="w-4 h-4" /> Subtitle Desk
+          <Captions className="w-4 h-4 shrink-0" /> Subtitle Desk
         </Link>
         <Link
           to="/srt-timeline"
-          className="px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Film className="w-4 h-4" /> Timeline
+          <Film className="w-4 h-4 shrink-0" /> Timeline
         </Link>
         <Link
           to="/brain"
-          className="px-5 sm:px-8 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 px-3 sm:px-6 lg:px-8 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Brain className="w-4 h-4" /> Second Brain
+          <Brain className="w-4 h-4 shrink-0" /> Second Brain
         </Link>
       </nav>
+
 
       {tab === "generate" && (
         <section className="grid lg:grid-cols-5 gap-6 lg:gap-8">
