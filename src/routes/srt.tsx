@@ -102,7 +102,7 @@ function SrtStudio() {
     <main className="min-h-screen px-4 sm:px-6 lg:px-10 py-6 sm:py-10 max-w-6xl mx-auto">
       <Masthead />
 
-      <nav className="flex items-center gap-4 border-b-2 border-foreground mb-8 pb-1">
+      <nav className="flex items-center gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap border-b-2 border-foreground mb-8 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="px-2 sm:px-4 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-primary">
           <Captions className="w-4 h-4" /> Subtitle Desk
         </div>
