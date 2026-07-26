@@ -437,7 +437,8 @@ function TimelineStudio() {
       <p className="text-sm font-serif text-muted-foreground mb-6 max-w-3xl">
         Load the source video and its <code className="font-mono">.srt</code>. Cues are drawn as draggable
         regions over the audio waveform — grab an edge to trim, drag the middle to move, or click{" "}
-        <b>Split</b> to break a cue at the playhead. Export the adjusted <code className="font-mono">.srt</code>{" "}
+        <b>Split</b> to break a cue at the playhead, or press <b>Suggest splits</b> to let the app find
+        pauses inside long cues and propose new time ranges. Export the adjusted <code className="font-mono">.srt</code>{" "}
         when you&apos;re done.
       </p>
 
