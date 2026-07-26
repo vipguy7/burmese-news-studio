@@ -521,6 +521,20 @@ function TimelineStudio() {
                 <Scissors className="w-3.5 h-3.5" /> Split
               </button>
               <button
+                onClick={analyzeSplits}
+                disabled={!videoUrl || cues.length === 0 || analyzing}
+                className="inline-flex items-center gap-1 border border-border px-3 py-1.5 hover:bg-accent disabled:opacity-50"
+                title="Analyze the waveform for pauses inside long cues"
+              >
+                {analyzing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Wand2 className="w-3.5 h-3.5" />
+                )}
+                {analyzing ? "Analyzing…" : "Suggest splits"}
+              </button>
+
+              <button
                 onClick={addCueAtPlayhead}
                 disabled={!videoUrl}
                 className="inline-flex items-center gap-1 border border-border px-3 py-1.5 hover:bg-accent disabled:opacity-50"
