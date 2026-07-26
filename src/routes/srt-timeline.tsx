@@ -572,6 +572,163 @@ function TimelineStudio() {
         </div>
       </section>
 
+      {/* Auto-suggested split points */}
+      <section className="border border-border bg-card mb-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 sm:px-4 py-2 border-b border-border sm:flex sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <Wand2 className="w-3.5 h-3.5 shrink-0 text-primary" />
+            <h3 className="truncate text-xs font-sans uppercase tracking-widest">
+              Suggested split points{suggestions.length > 0 ? ` (${suggestions.length})` : ""}
+            </h3>
+          </div>
+          {suggestions.length > 0 && (
+            <button
+              onClick={applyAllSuggestions}
+              className="shrink-0 inline-flex items-center gap-1 bg-foreground text-background px-3 py-1.5 font-sans text-xs uppercase tracking-wider hover:bg-primary"
+            >
+              <Check className="w-3.5 h-3.5" /> Accept all
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4 px-3 sm:px-4 py-3 border-b border-border">
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
+              Long cue ≥ (sec)
+            </span>
+            <input
+              type="number"
+              min={2}
+              max={30}
+              step={0.5}
+              value={minDuration}
+              onChange={(e) => setMinDuration(Number(e.target.value) || 6)}
+              className="w-24 bg-background border border-input px-2 py-1 font-mono text-xs"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
+              Max words / cue
+            </span>
+            <input
+              type="number"
+              min={4}
+              max={60}
+              value={maxWords}
+              onChange={(e) => setMaxWords(Number(e.target.value) || 20)}
+              className="w-24 bg-background border border-input px-2 py-1 font-mono text-xs"
+            />
+          </label>
+          <p className="text-xs font-serif text-muted-foreground flex-1 min-w-[220px]">
+            We scan the audio for pauses and energy drops inside long cues, then propose new time
+            ranges. Nudge a split, preview it, then accept.
+          </p>
+        </div>
+
+        {suggestions.length === 0 ? (
+          <p className="px-4 py-6 text-center text-xs font-serif text-muted-foreground">
+            {analyzed
+              ? "No pending suggestions. Adjust the thresholds and run the analysis again."
+              : "Load a video and .srt, then press “Suggest splits” to analyze the waveform."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border max-h-[420px] overflow-auto">
+            {suggestions.map((s) => (
+              <li key={s.cueId} className="px-3 sm:px-4 py-3 space-y-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  <div className="min-w-0">
+                    <div className="text-xs font-mono text-muted-foreground">
+                      #{s.cueIndex + 1} · {secToTs(s.originalStart)} → {secToTs(s.originalEnd)} ·{" "}
+                      {s.segments.length} parts
+                    </div>
+                    <div className="text-[11px] font-sans text-muted-foreground">
+                      {s.reason} · confidence{" "}
+                      <span
+                        className={
+                          s.confidence >= 0.6
+                            ? "text-primary font-semibold"
+                            : "text-muted-foreground font-semibold"
+                        }
+                      >
+                        {Math.round(s.confidence * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => applySuggestion(s)}
+                      className="inline-flex items-center gap-1 border border-border px-2 py-1 font-sans text-xs hover:bg-accent"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Accept
+                    </button>
+                    <button
+                      onClick={() => dismissSuggestion(s.cueId)}
+                      className="inline-flex items-center gap-1 border border-border px-2 py-1 font-sans text-xs hover:bg-accent"
+                    >
+                      <X className="w-3.5 h-3.5" /> Skip
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {s.splitTimes.map((t, i) => (
+                    <div
+                      key={i}
+                      className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1"
+                    >
+                      <button
+                        onClick={() => tweakSplit(s.cueId, i, t - 0.1)}
+                        className="px-1 font-mono text-xs hover:text-primary"
+                        title="Move split earlier"
+                      >
+                        −0.1s
+                      </button>
+                      <span className="font-mono text-xs">{secToTs(t)}</span>
+                      <button
+                        onClick={() => tweakSplit(s.cueId, i, t + 0.1)}
+                        className="px-1 font-mono text-xs hover:text-primary"
+                        title="Move split later"
+                      >
+                        +0.1s
+                      </button>
+                      <button
+                        onClick={() => seekTo(t)}
+                        className="px-1 font-mono text-xs hover:text-primary"
+                        title="Preview at this split"
+                      >
+                        ⏵
+                      </button>
+                      <button
+                        onClick={() => tweakSplit(s.cueId, i, currentTime)}
+                        className="px-1 font-sans text-[10px] uppercase tracking-wider hover:text-primary"
+                        title="Move this split to the playhead"
+                      >
+                        set
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <ul className="grid gap-1 sm:grid-cols-2">
+                  {s.segments.map((seg, i) => (
+                    <li key={i} className="border border-border bg-background px-2 py-1">
+                      <div className="text-[10px] font-mono text-muted-foreground">
+                        {secToTs(seg.start)} → {secToTs(seg.end)} · {(seg.end - seg.start).toFixed(2)}s
+                      </div>
+                      <div className="text-xs font-mono line-clamp-2 whitespace-pre-wrap">
+                        {seg.text || <span className="italic text-muted-foreground">(empty)</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+
+
       {/* Editor + list */}
       <section className="grid lg:grid-cols-[1fr_minmax(0,360px)] gap-4">
         <div className="border border-border bg-card p-4 space-y-3">
