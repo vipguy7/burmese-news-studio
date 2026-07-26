@@ -103,18 +103,18 @@ function SrtStudio() {
       <Masthead />
 
       <nav className="flex items-center gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap border-b-2 border-foreground mb-8 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="px-2 sm:px-4 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-primary">
+        <div className="shrink-0 px-2 sm:px-4 py-3 -mb-[2px] font-display text-base sm:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-primary">
           <Captions className="w-4 h-4" /> Subtitle Desk
         </div>
         <Link
           to="/srt-timeline"
-          className="px-2 py-3 text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          className="shrink-0 px-2 py-3 text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
           <Film className="w-3.5 h-3.5" /> Timeline Editor
         </Link>
         <Link
           to="/"
-          className="ml-auto text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          className="shrink-0 ml-auto text-sm font-sans text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
           <Home className="w-3.5 h-3.5" /> Newsroom
         </Link>
