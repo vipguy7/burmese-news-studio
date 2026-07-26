@@ -112,6 +112,14 @@ function TimelineStudio() {
   const [zoom, setZoom] = useState(80);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-suggest split points
+  const [suggestions, setSuggestions] = useState<SplitSuggestion[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzed, setAnalyzed] = useState(false);
+  const [minDuration, setMinDuration] = useState(DEFAULT_SUGGEST_OPTIONS.minDuration);
+  const [maxWords, setMaxWords] = useState(DEFAULT_SUGGEST_OPTIONS.maxWords);
+  const envelopeRef = useRef<Envelope | null>(null);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const waveContainerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -120,6 +128,7 @@ function TimelineStudio() {
   const regionsRef = useRef<any>(null);
   const cuesRef = useRef<Cue[]>([]);
   cuesRef.current = cues;
+
 
   // ---- File handlers
   async function onVideo(file: File) {
