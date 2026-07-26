@@ -136,13 +136,19 @@ function TimelineStudio() {
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     setVideoUrl(URL.createObjectURL(file));
     setVideoName(file.name);
+    envelopeRef.current = null;
+    setSuggestions([]);
+    setAnalyzed(false);
   }
   async function onSrtFile(file: File) {
     setSrtName(file.name);
     const t = await file.text();
     setSrtText(t);
     setCues(parseSrt(t));
+    setSuggestions([]);
+    setAnalyzed(false);
   }
+
 
   // ---- Wavesurfer setup
   useEffect(() => {
