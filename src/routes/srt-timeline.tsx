@@ -1,8 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Upload, Play, Pause, Scissors, Plus, Trash2, Download, Home, Film, Save } from "lucide-react";
+import {
+  Upload,
+  Play,
+  Pause,
+  Scissors,
+  Plus,
+  Trash2,
+  Download,
+  Home,
+  Film,
+  Save,
+  Wand2,
+  Check,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Masthead } from "@/components/newsroom/Masthead";
 import { AuthGate } from "@/components/newsroom/AuthGate";
+import {
+  buildEnvelope,
+  suggestSplitPoints,
+  withSplitTimes,
+  DEFAULT_SUGGEST_OPTIONS,
+  type Envelope,
+  type SplitSuggestion,
+} from "@/lib/split-suggest";
+
 
 export const Route = createFileRoute("/srt-timeline")({
   head: () => ({
