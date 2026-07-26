@@ -109,7 +109,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="border-b border-border bg-card/50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-2 flex items-center justify-end gap-3 text-xs font-sans">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs font-sans">
           {usage && (
             <span
               className={
@@ -120,17 +120,17 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
               }
               title={`Resets on the 1st of next month`}
             >
-              <Zap className="w-3 h-3" />
+              <Zap className="w-3 h-3 shrink-0" />
               {usage.remaining}/{usage.limit} free AI left
             </span>
           )}
-          {avatar && <img src={avatar} alt="" className="w-6 h-6 rounded-full" />}
-          <span className="text-muted-foreground">{name}</span>
+          {avatar && <img src={avatar} alt="" className="w-6 h-6 shrink-0 rounded-full" />}
+          <span className="hidden sm:inline max-w-[40vw] truncate text-muted-foreground">{name}</span>
           <button
             onClick={() => supabase.auth.signOut()}
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex shrink-0 items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <LogOut className="w-3 h-3" /> Sign out
+            <LogOut className="w-3 h-3 shrink-0" /> Sign out
           </button>
         </div>
       </div>
