@@ -271,6 +271,100 @@ function TimelineStudio() {
     setActiveId(newId);
   }
 
+  // ---- Auto-suggest split points from the waveform
+  async function analyzeSplits() {
+    setError(null);
+    const ws = wavesurferRef.current;
+    if (!ws) {
+      setError("Load the source video first.");
+      return;
+    }
+    if (cues.length === 0) {
+      setError("Load an .srt first.");
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      if (!envelopeRef.current) {
+        const decoded: AudioBuffer | null = ws.getDecodedData?.() ?? null;
+        if (!decoded) {
+          setError("Audio is still decoding — try again in a moment.");
+          return;
+        }
+        // Yield a frame so the spinner paints before the heavy loop.
+        await new Promise((r) => setTimeout(r, 0));
+        envelopeRef.current = buildEnvelope(decoded);
+      }
+      const found = suggestSplitPoints(cues, envelopeRef.current, {
+        ...DEFAULT_SUGGEST_OPTIONS,
+        minDuration,
+        maxWords,
+      });
+      setSuggestions(found);
+      setAnalyzed(true);
+      if (found.length === 0) setError("No long cues need splitting with the current thresholds.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not analyze the audio.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  function applySuggestion(s: SplitSuggestion) {
+    setCues((prev) => {
+      const idx = prev.findIndex((c) => c.id === s.cueId);
+      if (idx < 0) return prev;
+      const base = Date.now().toString(36);
+      const made: Cue[] = s.segments.map((seg, i) => ({
+        id: i === 0 ? s.cueId : `c${base}_${i}`,
+        start: seg.start,
+        end: seg.end,
+        text: seg.text,
+      }));
+      return [...prev.slice(0, idx), ...made, ...prev.slice(idx + 1)];
+    });
+    setSuggestions((prev) => prev.filter((x) => x.cueId !== s.cueId));
+    setActiveId(s.cueId);
+  }
+
+  function applyAllSuggestions() {
+    const list = suggestions;
+    setCues((prev) => {
+      let next = [...prev];
+      for (const s of list) {
+        const idx = next.findIndex((c) => c.id === s.cueId);
+        if (idx < 0) continue;
+        const base = Date.now().toString(36);
+        const made: Cue[] = s.segments.map((seg, i) => ({
+          id: i === 0 ? s.cueId : `c${base}_${s.cueIndex}_${i}`,
+          start: seg.start,
+          end: seg.end,
+          text: seg.text,
+        }));
+        next = [...next.slice(0, idx), ...made, ...next.slice(idx + 1)];
+      }
+      return next;
+    });
+    setSuggestions([]);
+  }
+
+  function dismissSuggestion(cueId: string) {
+    setSuggestions((prev) => prev.filter((x) => x.cueId !== cueId));
+  }
+
+  function tweakSplit(cueId: string, splitIdx: number, nextTime: number) {
+    setSuggestions((prev) =>
+      prev.map((s) => {
+        if (s.cueId !== cueId) return s;
+        const times = [...s.splitTimes];
+        times[splitIdx] = Math.round(nextTime * 1000) / 1000;
+        return withSplitTimes(s, times);
+      }),
+    );
+  }
+
+
+
   function addCueAtPlayhead() {
     const start = currentTime;
     const end = Math.min(duration || start + 2, start + 2);
