@@ -1,8 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Upload, Play, Pause, Scissors, Plus, Trash2, Download, Home, Film, Save } from "lucide-react";
+import {
+  Upload,
+  Play,
+  Pause,
+  Scissors,
+  Plus,
+  Trash2,
+  Download,
+  Home,
+  Film,
+  Save,
+  Wand2,
+  Check,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Masthead } from "@/components/newsroom/Masthead";
 import { AuthGate } from "@/components/newsroom/AuthGate";
+import {
+  buildEnvelope,
+  suggestSplitPoints,
+  withSplitTimes,
+  DEFAULT_SUGGEST_OPTIONS,
+  type Envelope,
+  type SplitSuggestion,
+} from "@/lib/split-suggest";
+
 
 export const Route = createFileRoute("/srt-timeline")({
   head: () => ({
@@ -88,6 +112,14 @@ function TimelineStudio() {
   const [zoom, setZoom] = useState(80);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-suggest split points
+  const [suggestions, setSuggestions] = useState<SplitSuggestion[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzed, setAnalyzed] = useState(false);
+  const [minDuration, setMinDuration] = useState(DEFAULT_SUGGEST_OPTIONS.minDuration);
+  const [maxWords, setMaxWords] = useState(DEFAULT_SUGGEST_OPTIONS.maxWords);
+  const envelopeRef = useRef<Envelope | null>(null);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const waveContainerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,19 +129,26 @@ function TimelineStudio() {
   const cuesRef = useRef<Cue[]>([]);
   cuesRef.current = cues;
 
+
   // ---- File handlers
   async function onVideo(file: File) {
     setError(null);
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     setVideoUrl(URL.createObjectURL(file));
     setVideoName(file.name);
+    envelopeRef.current = null;
+    setSuggestions([]);
+    setAnalyzed(false);
   }
   async function onSrtFile(file: File) {
     setSrtName(file.name);
     const t = await file.text();
     setSrtText(t);
     setCues(parseSrt(t));
+    setSuggestions([]);
+    setAnalyzed(false);
   }
+
 
   // ---- Wavesurfer setup
   useEffect(() => {
@@ -232,6 +271,100 @@ function TimelineStudio() {
     setActiveId(newId);
   }
 
+  // ---- Auto-suggest split points from the waveform
+  async function analyzeSplits() {
+    setError(null);
+    const ws = wavesurferRef.current;
+    if (!ws) {
+      setError("Load the source video first.");
+      return;
+    }
+    if (cues.length === 0) {
+      setError("Load an .srt first.");
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      if (!envelopeRef.current) {
+        const decoded: AudioBuffer | null = ws.getDecodedData?.() ?? null;
+        if (!decoded) {
+          setError("Audio is still decoding — try again in a moment.");
+          return;
+        }
+        // Yield a frame so the spinner paints before the heavy loop.
+        await new Promise((r) => setTimeout(r, 0));
+        envelopeRef.current = buildEnvelope(decoded);
+      }
+      const found = suggestSplitPoints(cues, envelopeRef.current, {
+        ...DEFAULT_SUGGEST_OPTIONS,
+        minDuration,
+        maxWords,
+      });
+      setSuggestions(found);
+      setAnalyzed(true);
+      if (found.length === 0) setError("No long cues need splitting with the current thresholds.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not analyze the audio.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  function applySuggestion(s: SplitSuggestion) {
+    setCues((prev) => {
+      const idx = prev.findIndex((c) => c.id === s.cueId);
+      if (idx < 0) return prev;
+      const base = Date.now().toString(36);
+      const made: Cue[] = s.segments.map((seg, i) => ({
+        id: i === 0 ? s.cueId : `c${base}_${i}`,
+        start: seg.start,
+        end: seg.end,
+        text: seg.text,
+      }));
+      return [...prev.slice(0, idx), ...made, ...prev.slice(idx + 1)];
+    });
+    setSuggestions((prev) => prev.filter((x) => x.cueId !== s.cueId));
+    setActiveId(s.cueId);
+  }
+
+  function applyAllSuggestions() {
+    const list = suggestions;
+    setCues((prev) => {
+      let next = [...prev];
+      for (const s of list) {
+        const idx = next.findIndex((c) => c.id === s.cueId);
+        if (idx < 0) continue;
+        const base = Date.now().toString(36);
+        const made: Cue[] = s.segments.map((seg, i) => ({
+          id: i === 0 ? s.cueId : `c${base}_${s.cueIndex}_${i}`,
+          start: seg.start,
+          end: seg.end,
+          text: seg.text,
+        }));
+        next = [...next.slice(0, idx), ...made, ...next.slice(idx + 1)];
+      }
+      return next;
+    });
+    setSuggestions([]);
+  }
+
+  function dismissSuggestion(cueId: string) {
+    setSuggestions((prev) => prev.filter((x) => x.cueId !== cueId));
+  }
+
+  function tweakSplit(cueId: string, splitIdx: number, nextTime: number) {
+    setSuggestions((prev) =>
+      prev.map((s) => {
+        if (s.cueId !== cueId) return s;
+        const times = [...s.splitTimes];
+        times[splitIdx] = Math.round(nextTime * 1000) / 1000;
+        return withSplitTimes(s, times);
+      }),
+    );
+  }
+
+
+
   function addCueAtPlayhead() {
     const start = currentTime;
     const end = Math.min(duration || start + 2, start + 2);
@@ -304,7 +437,8 @@ function TimelineStudio() {
       <p className="text-sm font-serif text-muted-foreground mb-6 max-w-3xl">
         Load the source video and its <code className="font-mono">.srt</code>. Cues are drawn as draggable
         regions over the audio waveform — grab an edge to trim, drag the middle to move, or click{" "}
-        <b>Split</b> to break a cue at the playhead. Export the adjusted <code className="font-mono">.srt</code>{" "}
+        <b>Split</b> to break a cue at the playhead, or press <b>Suggest splits</b> to let the app find
+        pauses inside long cues and propose new time ranges. Export the adjusted <code className="font-mono">.srt</code>{" "}
         when you&apos;re done.
       </p>
 
@@ -388,6 +522,20 @@ function TimelineStudio() {
                 <Scissors className="w-3.5 h-3.5" /> Split
               </button>
               <button
+                onClick={analyzeSplits}
+                disabled={!videoUrl || cues.length === 0 || analyzing}
+                className="inline-flex items-center gap-1 border border-border px-3 py-1.5 hover:bg-accent disabled:opacity-50"
+                title="Analyze the waveform for pauses inside long cues"
+              >
+                {analyzing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Wand2 className="w-3.5 h-3.5" />
+                )}
+                {analyzing ? "Analyzing…" : "Suggest splits"}
+              </button>
+
+              <button
                 onClick={addCueAtPlayhead}
                 disabled={!videoUrl}
                 className="inline-flex items-center gap-1 border border-border px-3 py-1.5 hover:bg-accent disabled:opacity-50"
@@ -424,6 +572,163 @@ function TimelineStudio() {
           </div>
         </div>
       </section>
+
+      {/* Auto-suggested split points */}
+      <section className="border border-border bg-card mb-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 sm:px-4 py-2 border-b border-border sm:flex sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <Wand2 className="w-3.5 h-3.5 shrink-0 text-primary" />
+            <h3 className="truncate text-xs font-sans uppercase tracking-widest">
+              Suggested split points{suggestions.length > 0 ? ` (${suggestions.length})` : ""}
+            </h3>
+          </div>
+          {suggestions.length > 0 && (
+            <button
+              onClick={applyAllSuggestions}
+              className="shrink-0 inline-flex items-center gap-1 bg-foreground text-background px-3 py-1.5 font-sans text-xs uppercase tracking-wider hover:bg-primary"
+            >
+              <Check className="w-3.5 h-3.5" /> Accept all
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4 px-3 sm:px-4 py-3 border-b border-border">
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
+              Long cue ≥ (sec)
+            </span>
+            <input
+              type="number"
+              min={2}
+              max={30}
+              step={0.5}
+              value={minDuration}
+              onChange={(e) => setMinDuration(Number(e.target.value) || 6)}
+              className="w-24 bg-background border border-input px-2 py-1 font-mono text-xs"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-widest font-sans text-muted-foreground mb-1">
+              Max words / cue
+            </span>
+            <input
+              type="number"
+              min={4}
+              max={60}
+              value={maxWords}
+              onChange={(e) => setMaxWords(Number(e.target.value) || 20)}
+              className="w-24 bg-background border border-input px-2 py-1 font-mono text-xs"
+            />
+          </label>
+          <p className="text-xs font-serif text-muted-foreground flex-1 min-w-[220px]">
+            We scan the audio for pauses and energy drops inside long cues, then propose new time
+            ranges. Nudge a split, preview it, then accept.
+          </p>
+        </div>
+
+        {suggestions.length === 0 ? (
+          <p className="px-4 py-6 text-center text-xs font-serif text-muted-foreground">
+            {analyzed
+              ? "No pending suggestions. Adjust the thresholds and run the analysis again."
+              : "Load a video and .srt, then press “Suggest splits” to analyze the waveform."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border max-h-[420px] overflow-auto">
+            {suggestions.map((s) => (
+              <li key={s.cueId} className="px-3 sm:px-4 py-3 space-y-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  <div className="min-w-0">
+                    <div className="text-xs font-mono text-muted-foreground">
+                      #{s.cueIndex + 1} · {secToTs(s.originalStart)} → {secToTs(s.originalEnd)} ·{" "}
+                      {s.segments.length} parts
+                    </div>
+                    <div className="text-[11px] font-sans text-muted-foreground">
+                      {s.reason} · confidence{" "}
+                      <span
+                        className={
+                          s.confidence >= 0.6
+                            ? "text-primary font-semibold"
+                            : "text-muted-foreground font-semibold"
+                        }
+                      >
+                        {Math.round(s.confidence * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => applySuggestion(s)}
+                      className="inline-flex items-center gap-1 border border-border px-2 py-1 font-sans text-xs hover:bg-accent"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Accept
+                    </button>
+                    <button
+                      onClick={() => dismissSuggestion(s.cueId)}
+                      className="inline-flex items-center gap-1 border border-border px-2 py-1 font-sans text-xs hover:bg-accent"
+                    >
+                      <X className="w-3.5 h-3.5" /> Skip
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {s.splitTimes.map((t, i) => (
+                    <div
+                      key={i}
+                      className="inline-flex items-center gap-1 border border-border bg-background px-2 py-1"
+                    >
+                      <button
+                        onClick={() => tweakSplit(s.cueId, i, t - 0.1)}
+                        className="px-1 font-mono text-xs hover:text-primary"
+                        title="Move split earlier"
+                      >
+                        −0.1s
+                      </button>
+                      <span className="font-mono text-xs">{secToTs(t)}</span>
+                      <button
+                        onClick={() => tweakSplit(s.cueId, i, t + 0.1)}
+                        className="px-1 font-mono text-xs hover:text-primary"
+                        title="Move split later"
+                      >
+                        +0.1s
+                      </button>
+                      <button
+                        onClick={() => seekTo(t)}
+                        className="px-1 font-mono text-xs hover:text-primary"
+                        title="Preview at this split"
+                      >
+                        ⏵
+                      </button>
+                      <button
+                        onClick={() => tweakSplit(s.cueId, i, currentTime)}
+                        className="px-1 font-sans text-[10px] uppercase tracking-wider hover:text-primary"
+                        title="Move this split to the playhead"
+                      >
+                        set
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <ul className="grid gap-1 sm:grid-cols-2">
+                  {s.segments.map((seg, i) => (
+                    <li key={i} className="border border-border bg-background px-2 py-1">
+                      <div className="text-[10px] font-mono text-muted-foreground">
+                        {secToTs(seg.start)} → {secToTs(seg.end)} · {(seg.end - seg.start).toFixed(2)}s
+                      </div>
+                      <div className="text-xs font-mono line-clamp-2 whitespace-pre-wrap">
+                        {seg.text || <span className="italic text-muted-foreground">(empty)</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+
 
       {/* Editor + list */}
       <section className="grid lg:grid-cols-[1fr_minmax(0,360px)] gap-4">
