@@ -96,7 +96,7 @@ export async function runTextJob(opts: {
     prompt: opts.prompt,
   });
   const text = await result.text;
-  const usage = await result.usage.catch(() => undefined);
+  const usage = await Promise.resolve(result.usage).catch(() => undefined);
   addUsage(opts.ledger, opts.job, usage, estimateTokens(opts.system + opts.prompt), text);
   return text.trim();
 }
