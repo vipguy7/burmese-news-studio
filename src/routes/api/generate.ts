@@ -306,50 +306,67 @@ export const Route = createFileRoute("/api/generate")({
           );
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-2.5-flash");
+        const {
+          budgetText,
+          BUDGETS,
+          newLedger,
+          runTextJob,
+          runJsonJob,
+          verifyAndRepair,
+        } = await import("@/lib/ai-pipeline.server");
+
+        const ledger = newLedger();
+        const budgeted = budgetText(sourceText, BUDGETS.source);
 
         const userPrompt = `SOURCE MATERIAL:
-${sourceText}
+${budgeted.text}
 
 TASK: Produce the ${body.scriptType === "video" ? "broadcast narration script" : "web news article"} in ${LANG_LABEL[body.mode]}. Follow every CRITICAL OUTPUT RULE.`;
 
         try {
-          // 1) Main narrative
-          const narrative = await generateText({
-            model,
-            system: systemPrompt(body),
-            prompt: userPrompt,
-          });
-          const cleaned = cleanNarrative(narrative.text);
+          // Job 1 — draft
+          const draft = cleanNarrative(
+            await runTextJob({
+              apiKey,
+              job: "draft",
+              system: systemPrompt(body),
+              prompt: userPrompt,
+              ledger,
+            }),
+          );
 
-          // 2) SEO + categorization — ask for JSON directly
-          const seoRaw = await generateText({
-            model,
+          // Job 2 + 3 — grounding check, then repair only if needed
+          const verified = await verifyAndRepair({
+            apiKey,
+            source: budgeted.text,
+            draft,
+            ledger,
+          });
+          const cleaned = cleanNarrative(verified.text);
+
+          // Job 4 — SEO + categorization (fed a budgeted excerpt, not the full piece)
+          const seo = await runJsonJob({
+            apiKey,
+            job: "seo",
             system:
               'You are a Myanmar newsroom SEO editor. Output ONLY a single JSON object, no markdown, no commentary. Schema: {"title": string, "metaDescription": string, "hashtags": string[], "category": string, "keywords": string[]}. Use the SAME LANGUAGE as the article for title, metaDescription, and hashtags. Category from: Politics, Economy, Business, Technology, Health, Environment, Conflict & Security, International, Sports, Culture, Education, Human Rights, Other.',
-            prompt: `ARTICLE:\n${cleaned}\n\nReturn the JSON object now.`,
+            prompt: `ARTICLE:\n${budgetText(cleaned, BUDGETS.draft).text}\n\nReturn the JSON object now.`,
+            fallback: {
+              title: "",
+              metaDescription: "",
+              hashtags: [] as string[],
+              category: "Other",
+              keywords: [] as string[],
+            },
+            ledger,
           });
-
-          let seo = {
-            title: "",
-            metaDescription: "",
-            hashtags: [] as string[],
-            category: "Other",
-            keywords: [] as string[],
-          };
-          try {
-            const raw = seoRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
-            const match = raw.match(/\{[\s\S]*\}/);
-            if (match) seo = { ...seo, ...JSON.parse(match[0]) };
-          } catch {
-            /* keep defaults */
-          }
 
           const result = {
             narrative: cleaned,
             seo,
             cached: false,
+            grounding: verified.grounding,
+            pipeline: { jobs: ledger.jobs, tokens: ledger, sourceTruncated: budgeted.truncated },
             usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
