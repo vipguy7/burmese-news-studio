@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Loader2, Sparkles, ScanText, Hash, Tag, AlignLeft, Brain, Trophy, Captions, Film } from "lucide-react";
+import { Loader2, Sparkles, ScanText, Hash, Tag, AlignLeft, Brain, Trophy } from "lucide-react";
 import { Masthead } from "@/components/newsroom/Masthead";
 import { SourceInput, type SourceKind } from "@/components/newsroom/SourceInput";
 import { CopyDownload } from "@/components/newsroom/CopyDownload";
