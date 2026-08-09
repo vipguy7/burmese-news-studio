@@ -175,18 +175,6 @@ function Newsroom() {
           <Trophy className="w-4 h-4 shrink-0" /> Sport Desk
         </Link>
         <Link
-          to="/srt"
-          className="shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Captions className="w-4 h-4 shrink-0" /> Subtitle Desk
-        </Link>
-        <Link
-          to="/srt-timeline"
-          className="shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Film className="w-4 h-4 shrink-0" /> Timeline
-        </Link>
-        <Link
           to="/brain"
           className="shrink-0 px-3 sm:px-4 lg:px-5 py-3 -mb-[2px] font-display text-sm sm:text-base lg:text-lg font-semibold inline-flex items-center gap-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
         >
