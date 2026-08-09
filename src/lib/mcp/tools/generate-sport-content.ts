@@ -100,10 +100,13 @@ export default defineTool({
     const { buildNamePromptTable, normalizeBurmeseNames } = await import("@/lib/sport-name-map");
     const nameTable = buildNamePromptTable(nameOverrides);
 
-    const { generateText } = await import("ai");
-    const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway");
     const { cleanNarrative } = await import("@/lib/clean-output");
-    const model = createLovableAiGatewayProvider(apiKey)("google/gemini-2.5-flash");
+    const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } = await import(
+      "@/lib/ai-pipeline.server"
+    );
+    const ledger = newLedger();
+    const budgetedSource = budgetText(sourceText, BUDGETS.source);
+    const budgetedContext = brainContext ? budgetText(brainContext, BUDGETS.context).text : "";
 
     const system = `You are a Burmese sports writer for a fan-first football/sports outlet.
 CONTENT TYPE: ${TYPE_LABEL[contentType]}
@@ -118,11 +121,19 @@ RULES:
 NAME NORMALIZATION TABLE (English → canonical Burmese):
 ${nameTable}`;
 
-    const userPrompt = `${brainContext ? `REFERENCE GLOSSARY & STYLE NOTES:\n${brainContext}\n\n` : ""}SOURCE MATERIAL:\n${sourceText}\n\nNow write the ${contentType.replace("_", " ")}.`;
+    const userPrompt = `${budgetedContext ? `REFERENCE GLOSSARY & STYLE NOTES:\n${budgetedContext}\n\n` : ""}SOURCE MATERIAL:\n${budgetedSource.text}\n\nNow write the ${contentType.replace("_", " ")}.`;
 
     try {
-      const out = await generateText({ model, system, prompt: userPrompt });
-      const raw = cleanNarrative(out.text);
+      const draft = cleanNarrative(
+        await runTextJob({ apiKey, job: "draft", system, prompt: userPrompt, ledger }),
+      );
+      const verified = await verifyAndRepair({
+        apiKey,
+        source: budgetedSource.text,
+        draft,
+        ledger,
+      });
+      const raw = cleanNarrative(verified.text);
       const cleaned =
         outputLanguage === "english"
           ? raw
@@ -132,7 +143,13 @@ ${nameTable}`;
             });
       return {
         content: [{ type: "text", text: cleaned }],
-        structuredContent: { output: cleaned, contentType, outputLanguage, brainUsed: !!brainContext },
+        structuredContent: {
+          output: cleaned,
+          contentType,
+          outputLanguage,
+          brainUsed: !!brainContext,
+          grounding: verified.grounding,
+        },
       };
     } catch (e) {
       return { content: [{ type: "text", text: (e as Error).message }], isError: true };
