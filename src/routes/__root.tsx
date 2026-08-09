@@ -88,11 +88,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Sport Translator vr 1.2" },
-      { name: "description", content: "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards." },
-      { property: "og:description", content: "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards." },
-      { name: "twitter:description", content: "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a81bbd9b-fc06-4772-a744-1443cb1aebad" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a81bbd9b-fc06-4772-a744-1443cb1aebad" },
+      {
+        name: "description",
+        content:
+          "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards.",
+      },
+      {
+        property: "og:description",
+        content:
+          "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Professional newsroom studio for Myanmar journalists: AI script architect, Burmese proof-editor, and SEO suite to Mizzima / BBC Burmese / RFA standards.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a81bbd9b-fc06-4772-a744-1443cb1aebad",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a81bbd9b-fc06-4772-a744-1443cb1aebad",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

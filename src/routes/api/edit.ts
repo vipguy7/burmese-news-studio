@@ -48,9 +48,8 @@ export const Route = createFileRoute("/api/edit")({
           );
         }
 
-        const { budgetText, BUDGETS, newLedger, runTextJob, runJsonJob } = await import(
-          "@/lib/ai-pipeline.server"
-        );
+        const { budgetText, BUDGETS, newLedger, runTextJob, runJsonJob } =
+          await import("@/lib/ai-pipeline.server");
         const ledger = newLedger();
         const draftIn = budgetText(body.text, BUDGETS.source);
 

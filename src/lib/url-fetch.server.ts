@@ -9,7 +9,10 @@ const ALLOWED_CONTENT_TYPES = ["text/html", "application/xhtml+xml", "text/plain
 function getAllowlist(): string[] | null {
   const raw = process.env.URL_FETCH_ALLOWLIST?.trim();
   if (!raw) return null;
-  return raw.split(",").map((s) => s.trim().toLowerCase().replace(/^\.+/, "")).filter(Boolean);
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase().replace(/^\.+/, ""))
+    .filter(Boolean);
 }
 function hostMatchesAllowlist(host: string, list: string[]): boolean {
   const h = host.toLowerCase();
@@ -54,7 +57,8 @@ async function resolveAndCheck(hostname: string): Promise<void> {
     lower.endsWith(".local") ||
     lower === "metadata.google.internal" ||
     lower === "metadata.goog"
-  ) throw new Error("Blocked: internal hostname");
+  )
+    throw new Error("Blocked: internal hostname");
   let resolved = false;
   for (const type of ["A", "AAAA"]) {
     try {
@@ -78,7 +82,11 @@ async function resolveAndCheck(hostname: string): Promise<void> {
 
 export async function fetchUrlText(rawUrl: string): Promise<string> {
   let parsed: URL;
-  try { parsed = new URL(rawUrl); } catch { throw new Error("Could not fetch URL: invalid URL"); }
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("Could not fetch URL: invalid URL");
+  }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
     throw new Error("Could not fetch URL: only http(s) URLs are allowed");
   if (parsed.username || parsed.password)
@@ -117,7 +125,11 @@ export async function fetchUrlText(rawUrl: string): Promise<string> {
       if (value) {
         total += value.byteLength;
         if (total > MAX_RESPONSE_BYTES) {
-          try { await reader.cancel(); } catch { /* ignore */ }
+          try {
+            await reader.cancel();
+          } catch {
+            /* ignore */
+          }
           throw new Error("Blocked: response exceeds size limit");
         }
         chunks.push(value);
@@ -125,7 +137,10 @@ export async function fetchUrlText(rawUrl: string): Promise<string> {
     }
     const buf = new Uint8Array(total);
     let off = 0;
-    for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
+    for (const c of chunks) {
+      buf.set(c, off);
+      off += c.byteLength;
+    }
     const html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
     const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
     const title = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : "";

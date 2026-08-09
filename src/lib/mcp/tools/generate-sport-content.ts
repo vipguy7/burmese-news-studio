@@ -34,7 +34,9 @@ export default defineTool({
   description:
     "Take an English (or mixed) sports source URL or raw text and generate a Burmese fan-first football/sports article. Chooses format (match review/preview/analysis/highlights/player profile/general), tone, and language. Uses the shared brain's Burmese sport glossary and name-normalization overrides for consistent club/player spellings.",
   inputSchema: {
-    sourceKind: z.enum(["url", "text"]).describe("'url' scrapes the article; 'text' uses the string directly."),
+    sourceKind: z
+      .enum(["url", "text"])
+      .describe("'url' scrapes the article; 'text' uses the string directly."),
     source: z.string().min(1).max(60000),
     contentType: z.enum([
       "match_review",
@@ -46,19 +48,40 @@ export default defineTool({
     ]),
     outputLanguage: z.enum(["burmese-casual", "english", "bilingual"]).default("burmese-casual"),
     tone: z.enum(["casual", "hype", "analytical"]).default("casual"),
-    notes: z.string().max(2000).optional().describe("Optional editor notes for angle / must-mentions."),
-    use_brain: z.boolean().default(true).describe("Load Burmese sport glossary + name overrides from the brain."),
+    notes: z
+      .string()
+      .max(2000)
+      .optional()
+      .describe("Optional editor notes for angle / must-mentions."),
+    use_brain: z
+      .boolean()
+      .default(true)
+      .describe("Load Burmese sport glossary + name overrides from the brain."),
   },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
   handler: async (
-    { sourceKind, source, contentType, outputLanguage = "burmese-casual", tone = "casual", notes = "", use_brain = true },
+    {
+      sourceKind,
+      source,
+      contentType,
+      outputLanguage = "burmese-casual",
+      tone = "casual",
+      notes = "",
+      use_brain = true,
+    },
     ctx,
   ) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return { content: [{ type: "text", text: "Server missing LOVABLE_API_KEY" }], isError: true };
+    if (!apiKey)
+      return { content: [{ type: "text", text: "Server missing LOVABLE_API_KEY" }], isError: true };
 
     let sourceText = source;
     if (sourceKind === "url") {
@@ -66,7 +89,10 @@ export default defineTool({
         const { fetchUrlText } = await import("@/lib/url-fetch.server");
         sourceText = await fetchUrlText(source.trim());
       } catch (e) {
-        return { content: [{ type: "text", text: `Fetch failed: ${(e as Error).message}` }], isError: true };
+        return {
+          content: [{ type: "text", text: `Fetch failed: ${(e as Error).message}` }],
+          isError: true,
+        };
       }
     }
 
@@ -81,9 +107,16 @@ export default defineTool({
           .overlaps("tags", ["sport", "sport-name"])
           .limit(80);
         const glossary: { title: string; content: string }[] = [];
-        for (const r of (data ?? []) as { title: string; content: string; tags: string[] | null }[]) {
+        for (const r of (data ?? []) as {
+          title: string;
+          content: string;
+          tags: string[] | null;
+        }[]) {
           if (r.tags?.includes("sport-name")) {
-            const [my, short] = r.content.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+            const [my, short] = r.content
+              .split(/\r?\n/)
+              .map((s) => s.trim())
+              .filter(Boolean);
             if (my) nameOverrides[r.title.trim()] = { my, short: short || undefined, kind: "club" };
           } else {
             glossary.push({ title: r.title, content: r.content });
@@ -101,9 +134,8 @@ export default defineTool({
     const nameTable = buildNamePromptTable(nameOverrides);
 
     const { cleanNarrative } = await import("@/lib/clean-output");
-    const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } = await import(
-      "@/lib/ai-pipeline.server"
-    );
+    const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } =
+      await import("@/lib/ai-pipeline.server");
     const ledger = newLedger();
     const budgetedSource = budgetText(sourceText, BUDGETS.source);
     const budgetedContext = brainContext ? budgetText(brainContext, BUDGETS.context).text : "";

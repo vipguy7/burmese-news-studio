@@ -81,7 +81,10 @@ export const Route = createFileRoute("/api/brain/translate")({
           const admin = supabaseAdmin as unknown as {
             from: (t: string) => {
               select: (cols: string) => {
-                in: (c: string, v: string[]) => Promise<{ data: BrainRow[] | null; error: unknown }>;
+                in: (
+                  c: string,
+                  v: string[],
+                ) => Promise<{ data: BrainRow[] | null; error: unknown }>;
               };
             };
           };
@@ -122,7 +125,12 @@ export const Route = createFileRoute("/api/brain/translate")({
           }
         }
 
-        const key = await hashKey({ kind: "brain_translate", userId, ...body, ids: [...seen].sort() });
+        const key = await hashKey({
+          kind: "brain_translate",
+          userId,
+          ...body,
+          ids: [...seen].sort(),
+        });
         const cached = cacheGet(key);
         if (cached) return Response.json({ ...JSON.parse(cached), cached: true });
 
@@ -134,9 +142,8 @@ export const Route = createFileRoute("/api/brain/translate")({
           );
         }
 
-        const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } = await import(
-          "@/lib/ai-pipeline.server"
-        );
+        const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } =
+          await import("@/lib/ai-pipeline.server");
         const ledger = newLedger();
 
         // Budget the corpus: split the source budget evenly across items so one

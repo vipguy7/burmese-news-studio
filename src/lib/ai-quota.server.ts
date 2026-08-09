@@ -22,7 +22,9 @@ export async function getUserIdFromRequest(request: Request): Promise<string | n
 }
 
 /** Read current usage, resetting if a new month has started. */
-export async function getUsage(userId: string): Promise<{ used: number; limit: number; remaining: number }> {
+export async function getUsage(
+  userId: string,
+): Promise<{ used: number; limit: number; remaining: number }> {
   const period = currentPeriod();
   const { data } = await supabaseAdmin
     .from("ai_usage")

@@ -8,7 +8,11 @@ export default defineTool({
   description:
     "Semantic search over the shared newsroom knowledge base using vector similarity. Returns the items most relevant to the query.",
   inputSchema: {
-    query: z.string().min(1).max(2000).describe("Natural-language query to match against stored items."),
+    query: z
+      .string()
+      .min(1)
+      .max(2000)
+      .describe("Natural-language query to match against stored items."),
     match_count: z.number().int().min(1).max(20).default(6).describe("Max items to return."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
@@ -21,7 +25,10 @@ export default defineTool({
     try {
       embedding = await embedText(query);
     } catch (e) {
-      return { content: [{ type: "text", text: `Embedding failed: ${(e as Error).message}` }], isError: true };
+      return {
+        content: [{ type: "text", text: `Embedding failed: ${(e as Error).message}` }],
+        isError: true,
+      };
     }
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase.rpc("match_brain_items", {

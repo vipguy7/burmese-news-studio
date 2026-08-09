@@ -60,20 +60,28 @@ function SportPage() {
     setError(null);
     setResult(null);
     const source = kind === "url" ? url.trim() : text.trim();
-    if (!source) return setError(kind === "url" ? "Paste a sports article URL." : "Paste source text.");
+    if (!source)
+      return setError(kind === "url" ? "Paste a sports article URL." : "Paste source text.");
     setLoading(true);
     try {
       const res = await aiFetch("/api/sport/generate", {
         method: "POST",
         body: JSON.stringify({
-          sourceKind: kind, source, contentType,
-          outputLanguage: outLang, tone, notes, use_brain: useBrain,
+          sourceKind: kind,
+          source,
+          contentType,
+          outputLanguage: outLang,
+          tone,
+          notes,
+          use_brain: useBrain,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 402) throw new Error("AI credits exhausted.");
-        throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Generation failed"));
+        throw new Error(
+          data.error || (res.status === 429 ? "Rate limit reached." : "Generation failed"),
+        );
       }
       setResult(data);
     } catch (e) {
@@ -87,10 +95,15 @@ function SportPage() {
   return (
     <main className="min-h-screen px-4 sm:px-6 lg:px-10 py-6 sm:py-10 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm font-sans text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm font-sans text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="w-4 h-4" /> Back to Newsroom
         </Link>
-        <Link to="/brain" className="text-sm font-sans text-muted-foreground hover:text-foreground">Second Brain →</Link>
+        <Link to="/brain" className="text-sm font-sans text-muted-foreground hover:text-foreground">
+          Second Brain →
+        </Link>
       </div>
 
       <header className="masthead-rule py-6 mb-8 text-center">
@@ -101,7 +114,8 @@ function SportPage() {
           Sport Content Studio
         </h1>
         <p className="mt-3 text-sm sm:text-base italic text-muted-foreground font-serif">
-          Drop a link or paste text — get fan-style Burmese match reviews, previews, profiles &amp; more.
+          Drop a link or paste text — get fan-style Burmese match reviews, previews, profiles &amp;
+          more.
         </p>
       </header>
 
@@ -110,18 +124,22 @@ function SportPage() {
         <div className="lg:col-span-2 space-y-5">
           <div className="border border-border bg-card">
             <div className="flex border-b border-border">
-              {([
+              {[
                 { id: "url" as const, label: "URL", icon: LinkIcon },
                 { id: "text" as const, label: "Paste Text", icon: FileText },
-              ]).map((t) => {
+              ].map((t) => {
                 const Icon = t.icon;
                 const active = kind === t.id;
                 return (
                   <button
-                    key={t.id} type="button" onClick={() => setKind(t.id)}
+                    key={t.id}
+                    type="button"
+                    onClick={() => setKind(t.id)}
                     className={cn(
                       "flex-1 px-3 py-3 text-xs sm:text-sm font-sans font-medium uppercase tracking-wider inline-flex items-center justify-center gap-2 transition-colors",
-                      active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      active
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     )}
                   >
                     <Icon className="w-4 h-4" /> {t.label}
@@ -133,15 +151,20 @@ function SportPage() {
               {kind === "url" ? (
                 <div className="space-y-3">
                   <input
-                    type="url" value={url} onChange={(e) => setUrl(e.target.value)}
+                    type="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
                     placeholder="https://www.bbc.com/sport/football/..."
                     className="w-full px-3 py-3 bg-background border border-input font-sans text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <p className="text-xs text-muted-foreground italic">We&apos;ll scrape the article text, then write your Burmese sports piece.</p>
+                  <p className="text-xs text-muted-foreground italic">
+                    We&apos;ll scrape the article text, then write your Burmese sports piece.
+                  </p>
                 </div>
               ) : (
                 <textarea
-                  value={text} onChange={(e) => setText(e.target.value)}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
                   placeholder="Paste an English match report, player news, transfer story, etc."
                   className="w-full min-h-[200px] resize-y bg-transparent border-0 focus:outline-none font-serif text-base leading-relaxed placeholder:text-muted-foreground/60"
                 />
@@ -151,58 +174,93 @@ function SportPage() {
 
           <div className="border border-border bg-card p-4 sm:p-5 space-y-4">
             <div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-sans">Content Type</div>
+              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-sans">
+                Content Type
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {TYPES.map((t) => (
-                  <button key={t.id} type="button" onClick={() => setContentType(t.id)}
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setContentType(t.id)}
                     className={cn(
                       "text-left px-3 py-2 border text-xs font-sans transition-colors",
                       contentType === t.id
                         ? "border-foreground bg-foreground text-background"
                         : "border-border bg-background hover:border-foreground",
-                    )}>
+                    )}
+                  >
                     <div className="font-semibold">{t.label}</div>
-                    <div className={cn("text-[10px] mt-0.5", contentType === t.id ? "text-background/70" : "text-muted-foreground")}>{t.hint}</div>
+                    <div
+                      className={cn(
+                        "text-[10px] mt-0.5",
+                        contentType === t.id ? "text-background/70" : "text-muted-foreground",
+                      )}
+                    >
+                      {t.hint}
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
 
             <Field label="Output Language">
-              <Seg value={outLang} onChange={(v) => setOutLang(v as OutLang)}
+              <Seg
+                value={outLang}
+                onChange={(v) => setOutLang(v as OutLang)}
                 options={[
                   { value: "burmese-casual", label: "Burmese (Fan style)" },
                   { value: "bilingual", label: "Both" },
                   { value: "english", label: "English" },
-                ]} />
+                ]}
+              />
             </Field>
             <Field label="Voice">
-              <Seg value={tone} onChange={(v) => setTone(v as Tone)}
+              <Seg
+                value={tone}
+                onChange={(v) => setTone(v as Tone)}
                 options={[
                   { value: "casual", label: "Casual" },
                   { value: "hype", label: "Hype" },
                   { value: "analytical", label: "Analytical" },
-                ]} />
+                ]}
+              />
             </Field>
             <Field label="Editor Notes (optional)">
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. focus on Man City's midfield; keep under 300 words"
-                className="w-full min-h-[64px] resize-y bg-background border border-input px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                className="w-full min-h-[64px] resize-y bg-background border border-input px-3 py-2 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </Field>
             <label className="flex items-center gap-2 text-xs font-sans text-muted-foreground">
-              <input type="checkbox" checked={useBrain} onChange={(e) => setUseBrain(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={useBrain}
+                onChange={(e) => setUseBrain(e.target.checked)}
+              />
               Use Sport Brain glossary (Burmese football vocab, club &amp; player names)
             </label>
           </div>
 
-          <button onClick={run} disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 bg-foreground text-background py-4 font-sans font-semibold uppercase tracking-wider text-sm hover:bg-primary transition-colors disabled:opacity-60">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trophy className="w-4 h-4" />}
+          <button
+            onClick={run}
+            disabled={loading}
+            className="w-full inline-flex items-center justify-center gap-2 bg-foreground text-background py-4 font-sans font-semibold uppercase tracking-wider text-sm hover:bg-primary transition-colors disabled:opacity-60"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trophy className="w-4 h-4" />
+            )}
             {loading ? "Writing…" : "Generate Sport Content"}
           </button>
 
           {error && (
-            <div className="border-l-4 border-destructive bg-destructive/5 px-4 py-3 text-sm font-sans text-destructive">{error}</div>
+            <div className="border-l-4 border-destructive bg-destructive/5 px-4 py-3 text-sm font-sans text-destructive">
+              {error}
+            </div>
           )}
         </div>
 
@@ -231,7 +289,9 @@ function SportPage() {
                   <CopyDownload text={result.output} filename={`sport-${Date.now()}.txt`} />
                 </div>
                 {result.seo.title && (
-                  <h2 className="font-display text-2xl sm:text-3xl font-bold leading-tight mb-4">{result.seo.title}</h2>
+                  <h2 className="font-display text-2xl sm:text-3xl font-bold leading-tight mb-4">
+                    {result.seo.title}
+                  </h2>
                 )}
                 <div className="prose prose-neutral max-w-none font-serif whitespace-pre-wrap leading-relaxed text-[15px]">
                   {result.output}
@@ -239,7 +299,12 @@ function SportPage() {
                 {result.seo.hashtags?.length > 0 && (
                   <div className="mt-6 pt-4 border-t border-border flex flex-wrap gap-2">
                     {result.seo.hashtags.map((h, i) => (
-                      <span key={i} className="text-xs font-sans px-2 py-1 bg-muted text-foreground">{h}</span>
+                      <span
+                        key={i}
+                        className="text-xs font-sans px-2 py-1 bg-muted text-foreground"
+                      >
+                        {h}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -255,22 +320,36 @@ function SportPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-sans">{label}</div>
+      <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-sans">
+        {label}
+      </div>
       {children}
     </div>
   );
 }
-function Seg<T extends string>({ value, onChange, options }: {
-  value: T; onChange: (v: T) => void; options: { value: T; label: string }[];
+function Seg<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
 }) {
   return (
     <div className="inline-flex flex-wrap gap-1 p-1 bg-muted">
       {options.map((o) => (
-        <button key={o.value} type="button" onClick={() => onChange(o.value)}
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
           className={cn(
             "px-3 py-1.5 text-xs font-sans transition-colors",
-            value === o.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-          )}>
+            value === o.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
           {o.label}
         </button>
       ))}

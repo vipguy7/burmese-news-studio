@@ -93,8 +93,11 @@ function Newsroom() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
-        throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Generation failed"));
+        if (res.status === 402)
+          throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
+        throw new Error(
+          data.error || (res.status === 429 ? "Rate limit reached." : "Generation failed"),
+        );
       }
       setGenResult(data);
     } catch (e) {
@@ -118,7 +121,8 @@ function Newsroom() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
+        if (res.status === 402)
+          throw new Error("AI credits exhausted. Add credits in Workspace → Usage.");
         throw new Error(data.error || (res.status === 429 ? "Rate limit reached." : "Edit failed"));
       }
       setEditResult(data);
@@ -181,7 +185,6 @@ function Newsroom() {
           <Brain className="w-4 h-4 shrink-0" /> Second Brain
         </Link>
       </nav>
-
 
       {tab === "generate" && (
         <section className="grid lg:grid-cols-5 gap-6 lg:gap-8">
@@ -248,7 +251,11 @@ function Newsroom() {
               disabled={genLoading}
               className="w-full inline-flex items-center justify-center gap-2 bg-foreground text-background py-4 font-sans font-semibold uppercase tracking-wider text-sm hover:bg-primary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {genLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
               {genLoading ? "Drafting…" : "Generate Article"}
             </button>
 
@@ -278,7 +285,8 @@ function Newsroom() {
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-border">
                     <div className="text-xs uppercase tracking-widest text-muted-foreground font-sans">
-                      {genResult.seo.category} · {LABEL[mode]} · {scriptType === "video" ? "Narration" : "Article"}
+                      {genResult.seo.category} · {LABEL[mode]} ·{" "}
+                      {scriptType === "video" ? "Narration" : "Article"}
                       {genResult.cached && <span className="ml-2 italic">(cached)</span>}
                     </div>
                     <CopyDownload
@@ -330,7 +338,11 @@ function Newsroom() {
                 disabled={editLoading}
                 className="w-full inline-flex items-center justify-center gap-2 bg-foreground text-background py-4 font-sans font-semibold uppercase tracking-wider text-sm hover:bg-primary transition-colors disabled:opacity-60"
               >
-                {editLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanText className="w-4 h-4" />}
+                {editLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ScanText className="w-4 h-4" />
+                )}
                 {editLoading ? "Analyzing…" : "Run Proof-Editor"}
               </button>
               {editError && (
@@ -357,7 +369,10 @@ function Newsroom() {
                 {editResult && (
                   <div>
                     <div className="flex items-center justify-end mb-3">
-                      <CopyDownload text={editResult.edited} filename={`edited-${Date.now()}.txt`} />
+                      <CopyDownload
+                        text={editResult.edited}
+                        filename={`edited-${Date.now()}.txt`}
+                      />
                     </div>
                     <div className="news-prose whitespace-pre-wrap">{editResult.edited}</div>
                   </div>
@@ -413,7 +428,8 @@ function Newsroom() {
       )}
 
       <footer className="mt-16 pt-6 border-t border-border text-center text-xs text-muted-foreground font-sans">
-        Newsroom · Built for Myanmar media · All AI output is reviewed by a human editor before publication.
+        Newsroom · Built for Myanmar media · All AI output is reviewed by a human editor before
+        publication.
       </footer>
     </main>
   );

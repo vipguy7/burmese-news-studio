@@ -116,13 +116,7 @@ export async function runJsonJob<T extends object>(opts: {
       system: opts.system,
       prompt: opts.prompt,
     });
-    addUsage(
-      opts.ledger,
-      opts.job,
-      out.usage,
-      estimateTokens(opts.system + opts.prompt),
-      out.text,
-    );
+    addUsage(opts.ledger, opts.job, out.usage, estimateTokens(opts.system + opts.prompt), out.text);
     const raw = out.text
       .trim()
       .replace(/^```json\s*|\s*```$/g, "")
@@ -186,7 +180,10 @@ export async function verifyAndRepair(opts: {
     .slice(0, 6);
 
   if (real.length === 0) {
-    return { text: draft, grounding: { checked: true, supported: true, issues: [], repaired: false } };
+    return {
+      text: draft,
+      grounding: { checked: true, supported: true, issues: [], repaired: false },
+    };
   }
 
   const repaired = await runTextJob({

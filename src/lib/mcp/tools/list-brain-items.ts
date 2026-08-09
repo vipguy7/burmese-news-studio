@@ -8,9 +8,23 @@ export default defineTool({
   description:
     "List the most recent items in the shared newsroom knowledge base ('second brain'). Optionally filter by tag (e.g. 'sport', 'sport-name') or free-text substring match on the title.",
   inputSchema: {
-    limit: z.number().int().min(1).max(100).default(20).describe("Max items to return (default 20)."),
-    tag: z.string().max(40).optional().describe("Return only items whose tags array contains this tag."),
-    title_contains: z.string().max(200).optional().describe("Case-insensitive substring match on title."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20)
+      .describe("Max items to return (default 20)."),
+    tag: z
+      .string()
+      .max(40)
+      .optional()
+      .describe("Return only items whose tags array contains this tag."),
+    title_contains: z
+      .string()
+      .max(200)
+      .optional()
+      .describe("Case-insensitive substring match on title."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit, tag, title_contains }, ctx) => {

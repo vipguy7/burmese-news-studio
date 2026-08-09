@@ -31,15 +31,31 @@ export default defineTool({
   description:
     "Retrieval-augmented generation: pull knowledge-base items (explicitly by id or via semantic recall on the brief) and rewrite them into the chosen publishing format and language. Use for translating Burmese ↔ English and packaging into video script, web article, social post, or newsletter.",
   inputSchema: {
-    brief: z.string().min(1).max(4000).describe("What the piece should be about (angle, key facts, audience)."),
+    brief: z
+      .string()
+      .min(1)
+      .max(4000)
+      .describe("What the piece should be about (angle, key facts, audience)."),
     target_format: z.enum(["video_script", "web_article", "social_post", "newsletter"]),
     target_language: z.enum(["burmese-standard", "burmese-long", "english"]),
     tone: z.enum(["professional", "engaging", "neutral"]).default("professional"),
-    item_ids: z.array(z.string().uuid()).max(20).default([]).describe("Optional brain_items ids to include as primary sources."),
-    use_semantic_recall: z.boolean().default(true).describe("Also recall additional items by vector similarity to the brief."),
+    item_ids: z
+      .array(z.string().uuid())
+      .max(20)
+      .default([])
+      .describe("Optional brain_items ids to include as primary sources."),
+    use_semantic_recall: z
+      .boolean()
+      .default(true)
+      .describe("Also recall additional items by vector similarity to the brief."),
     recall_count: z.number().int().min(1).max(10).default(5),
   },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  },
   handler: async (
     {
       brief,
@@ -56,7 +72,8 @@ export default defineTool({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return { content: [{ type: "text", text: "Server missing LOVABLE_API_KEY" }], isError: true };
+    if (!apiKey)
+      return { content: [{ type: "text", text: "Server missing LOVABLE_API_KEY" }], isError: true };
 
     const supabase = supabaseForUser(ctx);
     type Row = {
@@ -103,9 +120,8 @@ export default defineTool({
     }
 
     const { cleanNarrative } = await import("@/lib/clean-output");
-    const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } = await import(
-      "@/lib/ai-pipeline.server"
-    );
+    const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } =
+      await import("@/lib/ai-pipeline.server");
     const ledger = newLedger();
     const perItem = Math.max(400, Math.floor(BUDGETS.source / Math.max(1, sources.length)));
 

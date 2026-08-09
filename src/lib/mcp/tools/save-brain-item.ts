@@ -9,14 +9,30 @@ export default defineTool({
     "Save a new item into the shared newsroom knowledge base ('second brain'). The item becomes available for future semantic recall and format generation.",
   inputSchema: {
     title: z.string().min(1).max(300),
-    content: z.string().min(1).max(60000).describe("Full text body: notes, transcript, article body, or research."),
+    content: z
+      .string()
+      .min(1)
+      .max(60000)
+      .describe("Full text body: notes, transcript, article body, or research."),
     source_url: z.string().url().max(2000).optional().describe("Optional source URL."),
     source_type: z.enum(["text", "url", "note", "transcript"]).default("text"),
     language: z.enum(["burmese", "english", "mixed", "unknown"]).default("unknown"),
-    tags: z.array(z.string().max(40)).max(12).default([]).describe("Freeform tags. Use 'sport' or 'sport-name' for sport-desk items."),
+    tags: z
+      .array(z.string().max(40))
+      .max(12)
+      .default([])
+      .describe("Freeform tags. Use 'sport' or 'sport-name' for sport-desk items."),
   },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  handler: async ({ title, content, source_url, source_type = "text", language = "unknown", tags = [] }, ctx) => {
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  },
+  handler: async (
+    { title, content, source_url, source_type = "text", language = "unknown", tags = [] },
+    ctx,
+  ) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
