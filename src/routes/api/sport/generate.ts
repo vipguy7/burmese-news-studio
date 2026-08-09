@@ -140,8 +140,18 @@ export const Route = createFileRoute("/api/sport/generate")({
           );
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-2.5-flash");
+        const {
+          budgetText,
+          BUDGETS,
+          newLedger,
+          runTextJob,
+          runJsonJob,
+          verifyAndRepair,
+        } = await import("@/lib/ai-pipeline.server");
+
+        const ledger = newLedger();
+        const budgetedSource = budgetText(sourceText, BUDGETS.source);
+        const budgetedContext = brainContext ? budgetText(brainContext, BUDGETS.context).text : "";
 
         const system = `You are a Burmese sports writer for a fan-first football/sports outlet. You take English (or mixed) sports source material and turn it into native-feeling Burmese sports content for Myanmar fans.
 
@@ -159,17 +169,29 @@ ABSOLUTE RULES:
 NAME NORMALIZATION TABLE (English → canonical Burmese):
 ${nameTable}`;
 
-        const userPrompt = `${brainContext ? `REFERENCE GLOSSARY & STYLE NOTES (Burmese sport vocabulary — use this when picking words):
-${brainContext}
+        const userPrompt = `${budgetedContext ? `REFERENCE GLOSSARY & STYLE NOTES (Burmese sport vocabulary — use this when picking words):
+${budgetedContext}
 
 ` : ""}SOURCE MATERIAL:
-${sourceText}
+${budgetedSource.text}
 
 Now write the ${body.contentType.replace("_", " ")} following every rule, especially NAME CONSISTENCY.`;
 
         try {
-          const out = await generateText({ model, system, prompt: userPrompt });
-          const rawCleaned = cleanNarrative(out.text);
+          // Job 1 — draft
+          const draft = cleanNarrative(
+            await runTextJob({ apiKey, job: "draft", system, prompt: userPrompt, ledger }),
+          );
+
+          // Job 2 + 3 — grounding check against the scraped source, repair only if needed
+          const verified = await verifyAndRepair({
+            apiKey,
+            source: budgetedSource.text,
+            draft,
+            ledger,
+          });
+
+          const rawCleaned = cleanNarrative(verified.text);
           const cleaned = body.outputLanguage === "english"
             ? rawCleaned
             : normalizeBurmeseNames(rawCleaned, {
@@ -177,18 +199,15 @@ Now write the ${body.contentType.replace("_", " ")} following every rule, especi
                 bilingual: body.outputLanguage === "bilingual",
               });
 
-          // Lightweight SEO/categorization
-          let seo = { title: "", metaDescription: "", hashtags: [] as string[] };
-          try {
-            const seoRaw = await generateText({
-              model,
-              system: 'Output ONLY a JSON object, no markdown. Schema: {"title": string, "metaDescription": string, "hashtags": string[]}. Match the article\'s language. Hashtags: 3-6, sports-relevant.',
-              prompt: `ARTICLE:\n${cleaned}\n\nReturn JSON now.`,
-            });
-            const raw = seoRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
-            const match = raw.match(/\{[\s\S]*\}/);
-            if (match) seo = { ...seo, ...JSON.parse(match[0]) };
-          } catch { /* keep defaults */ }
+          // Job 4 — SEO
+          const seo = await runJsonJob({
+            apiKey,
+            job: "seo",
+            system: 'Output ONLY a JSON object, no markdown. Schema: {"title": string, "metaDescription": string, "hashtags": string[]}. Match the article\'s language. Hashtags: 3-6, sports-relevant.',
+            prompt: `ARTICLE:\n${budgetText(cleaned, BUDGETS.draft).text}\n\nReturn JSON now.`,
+            fallback: { title: "", metaDescription: "", hashtags: [] as string[] },
+            ledger,
+          });
 
           const result = {
             output: cleaned,
@@ -197,6 +216,8 @@ Now write the ${body.contentType.replace("_", " ")} following every rule, especi
             outputLanguage: body.outputLanguage,
             cached: false,
             brainUsed: !!brainContext,
+            grounding: verified.grounding,
+            pipeline: { jobs: ledger.jobs, tokens: ledger, sourceTruncated: budgetedSource.truncated },
             usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
