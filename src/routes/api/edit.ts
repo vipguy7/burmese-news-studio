@@ -48,49 +48,53 @@ export const Route = createFileRoute("/api/edit")({
           );
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-2.5-flash");
+        const { budgetText, BUDGETS, newLedger, runTextJob, runJsonJob } = await import(
+          "@/lib/ai-pipeline.server"
+        );
+        const ledger = newLedger();
+        const draftIn = budgetText(body.text, BUDGETS.source);
 
         const system = `You are a senior copy editor for a Myanmar newsroom (Mizzima / BBC Burmese / RFA standard).
 Your job: proof-edit the user's draft for ${body.language === "burmese" ? "Burmese Unicode consistency (no Zawgyi), Burmese grammar and journalistic register" : "English news register, AP-style clarity"}, pacing, and journalistic impact.
 
 RULES:
-- Preserve the writer's facts and intent. Do not invent.
+- Preserve the writer's facts and intent. Do not invent, add, or remove facts, names, numbers, dates, or quotes.
 - Output PURE narrative prose only. No markdown, no headings, no labels, no bullets.
 - If the input contained Zawgyi-encoded Burmese, normalize to standard Unicode silently.
 - Keep paragraph structure where it serves clarity.`;
 
         try {
-          const edited = await generateText({
-            model,
-            system,
-            prompt: `DRAFT:\n${body.text}\n\nReturn the polished version only.`,
-          });
-          const editedClean = cleanNarrative(edited.text);
+          // Job 1 — copy edit
+          const editedClean = cleanNarrative(
+            await runTextJob({
+              apiKey,
+              job: "copy-edit",
+              system,
+              prompt: `DRAFT:\n${draftIn.text}\n\nReturn the polished version only.`,
+              ledger,
+            }),
+          );
 
-          const diffRaw = await generateText({
-            model,
+          // Job 2 — change report (budgeted inputs on both sides)
+          const analysis = await runJsonJob({
+            apiKey,
+            job: "change-report",
             system:
               'You analyze two versions of a news draft and list concrete editorial improvements. Output ONLY a JSON object, no markdown. Schema: {"improvements": [{"category": "Unicode"|"Grammar"|"Pacing"|"Clarity"|"Impact"|"Attribution"|"Style", "note": string}], "summary": string}. 1-10 improvements. Be specific, terse, professional.',
-            prompt: `ORIGINAL:\n${body.text}\n\nEDITED:\n${editedClean}\n\nReturn the JSON object now.`,
+            prompt: `ORIGINAL:\n${budgetText(body.text, BUDGETS.draft).text}\n\nEDITED:\n${budgetText(editedClean, BUDGETS.draft).text}\n\nReturn the JSON object now.`,
+            fallback: {
+              improvements: [] as { category: string; note: string }[],
+              summary: "Edits applied for clarity, pacing, and journalistic impact.",
+            },
+            ledger,
           });
-          let analysis: { improvements: { category: string; note: string }[]; summary: string } = {
-            improvements: [],
-            summary: "Edits applied for clarity, pacing, and journalistic impact.",
-          };
-          try {
-            const raw = diffRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
-            const match = raw.match(/\{[\s\S]*\}/);
-            if (match) analysis = { ...analysis, ...JSON.parse(match[0]) };
-          } catch {
-            /* keep defaults */
-          }
 
           const result = {
             original: body.text,
             edited: editedClean,
             analysis,
             cached: false,
+            pipeline: { jobs: ledger.jobs, tokens: ledger, sourceTruncated: draftIn.truncated },
             usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
