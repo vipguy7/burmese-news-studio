@@ -29,7 +29,10 @@ export const Route = createFileRoute("/api/brain/delete")({
         const admin = supabaseAdmin as unknown as {
           from: (t: string) => {
             delete: () => {
-              eq: (c: string, v: string) => {
+              eq: (
+                c: string,
+                v: string,
+              ) => {
                 eq: (c: string, v: string) => Promise<{ error: unknown }>;
               };
             };
@@ -42,10 +45,13 @@ export const Route = createFileRoute("/api/brain/delete")({
           .eq("id", body.id)
           .eq("created_by", userId);
         if (error) {
-          return new Response(JSON.stringify({ error: String((error as Error).message ?? error) }), {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: String((error as Error).message ?? error) }),
+            {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            },
+          );
         }
         return Response.json({ ok: true });
       },

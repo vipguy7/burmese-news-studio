@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
 import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
@@ -23,7 +21,8 @@ const LANG_LABEL: Record<string, string> = {
 };
 
 const TYPE_LABEL: Record<string, string> = {
-  video: "VIDEO NEWS NARRATION SCRIPT — written to be read aloud by a broadcaster: natural sentence rhythm, short clauses, broadcast pacing, no on-screen labels",
+  video:
+    "VIDEO NEWS NARRATION SCRIPT — written to be read aloud by a broadcaster: natural sentence rhythm, short clauses, broadcast pacing, no on-screen labels",
   web: "WEB NEWS ARTICLE — clean publishable prose with a strong lead sentence, contextual middle, and a closing sentence; flowing paragraphs only",
 };
 
@@ -181,8 +180,7 @@ async function fetchUrl(rawUrl: string): Promise<string> {
   try {
     const res = await fetch(parsed.toString(), {
       headers: {
-        "user-agent":
-          "Mozilla/5.0 (compatible; NewsroomBot/1.0; +https://lovable.dev)",
+        "user-agent": "Mozilla/5.0 (compatible; NewsroomBot/1.0; +https://lovable.dev)",
         accept: "text/html,application/xhtml+xml,text/plain;q=0.8",
       },
       redirect: "manual",
@@ -213,7 +211,11 @@ async function fetchUrl(rawUrl: string): Promise<string> {
       if (value) {
         total += value.byteLength;
         if (total > MAX_RESPONSE_BYTES) {
-          try { await reader.cancel(); } catch { /* ignore */ }
+          try {
+            await reader.cancel();
+          } catch {
+            /* ignore */
+          }
           throw new Error("Blocked: response exceeds size limit");
         }
         chunks.push(value);
@@ -221,7 +223,10 @@ async function fetchUrl(rawUrl: string): Promise<string> {
     }
     const buf = new Uint8Array(total);
     let offset = 0;
-    for (const c of chunks) { buf.set(c, offset); offset += c.byteLength; }
+    for (const c of chunks) {
+      buf.set(c, offset);
+      offset += c.byteLength;
+    }
     const html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
     let body = html
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -246,9 +251,7 @@ async function fetchUrl(rawUrl: string): Promise<string> {
       .slice(0, 18000);
     return (title ? `TITLE: ${title}\n\n` : "") + body;
   } catch (e) {
-    throw new Error(
-      `Could not fetch URL: ${e instanceof Error ? e.message : "unknown error"}`,
-    );
+    throw new Error(`Could not fetch URL: ${e instanceof Error ? e.message : "unknown error"}`);
   }
 }
 
@@ -257,8 +260,7 @@ export const Route = createFileRoute("/api/generate")({
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         const apiKey = process.env.LOVABLE_API_KEY;
-        if (!apiKey)
-          return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!apiKey) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
         const userId = await getUserIdFromRequest(request);
         if (!userId) {
@@ -272,10 +274,10 @@ export const Route = createFileRoute("/api/generate")({
         try {
           body = BodySchema.parse(await request.json());
         } catch (e) {
-          return new Response(
-            JSON.stringify({ error: "Invalid request", detail: String(e) }),
-            { status: 400, headers: { "content-type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Invalid request", detail: String(e) }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
         }
 
         let sourceText = body.source;
@@ -283,10 +285,10 @@ export const Route = createFileRoute("/api/generate")({
           try {
             sourceText = await fetchUrl(body.source.trim());
           } catch (e) {
-            return new Response(
-              JSON.stringify({ error: (e as Error).message }),
-              { status: 400, headers: { "content-type": "application/json" } },
-            );
+            return new Response(JSON.stringify({ error: (e as Error).message }), {
+              status: 400,
+              headers: { "content-type": "application/json" },
+            });
           }
         }
 
@@ -306,61 +308,68 @@ export const Route = createFileRoute("/api/generate")({
           );
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-2.5-flash");
+        const { budgetText, BUDGETS, newLedger, runTextJob, runJsonJob, verifyAndRepair } =
+          await import("@/lib/ai-pipeline.server");
+
+        const ledger = newLedger();
+        const budgeted = budgetText(sourceText, BUDGETS.source);
 
         const userPrompt = `SOURCE MATERIAL:
-${sourceText}
+${budgeted.text}
 
 TASK: Produce the ${body.scriptType === "video" ? "broadcast narration script" : "web news article"} in ${LANG_LABEL[body.mode]}. Follow every CRITICAL OUTPUT RULE.`;
 
         try {
-          // 1) Main narrative
-          const narrative = await generateText({
-            model,
-            system: systemPrompt(body),
-            prompt: userPrompt,
-          });
-          const cleaned = cleanNarrative(narrative.text);
+          // Job 1 — draft
+          const draft = cleanNarrative(
+            await runTextJob({
+              apiKey,
+              job: "draft",
+              system: systemPrompt(body),
+              prompt: userPrompt,
+              ledger,
+            }),
+          );
 
-          // 2) SEO + categorization — ask for JSON directly
-          const seoRaw = await generateText({
-            model,
+          // Job 2 + 3 — grounding check, then repair only if needed
+          const verified = await verifyAndRepair({
+            apiKey,
+            source: budgeted.text,
+            draft,
+            ledger,
+          });
+          const cleaned = cleanNarrative(verified.text);
+
+          // Job 4 — SEO + categorization (fed a budgeted excerpt, not the full piece)
+          const seo = await runJsonJob({
+            apiKey,
+            job: "seo",
             system:
               'You are a Myanmar newsroom SEO editor. Output ONLY a single JSON object, no markdown, no commentary. Schema: {"title": string, "metaDescription": string, "hashtags": string[], "category": string, "keywords": string[]}. Use the SAME LANGUAGE as the article for title, metaDescription, and hashtags. Category from: Politics, Economy, Business, Technology, Health, Environment, Conflict & Security, International, Sports, Culture, Education, Human Rights, Other.',
-            prompt: `ARTICLE:\n${cleaned}\n\nReturn the JSON object now.`,
+            prompt: `ARTICLE:\n${budgetText(cleaned, BUDGETS.draft).text}\n\nReturn the JSON object now.`,
+            fallback: {
+              title: "",
+              metaDescription: "",
+              hashtags: [] as string[],
+              category: "Other",
+              keywords: [] as string[],
+            },
+            ledger,
           });
-
-          let seo = {
-            title: "",
-            metaDescription: "",
-            hashtags: [] as string[],
-            category: "Other",
-            keywords: [] as string[],
-          };
-          try {
-            const raw = seoRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
-            const match = raw.match(/\{[\s\S]*\}/);
-            if (match) seo = { ...seo, ...JSON.parse(match[0]) };
-          } catch {
-            /* keep defaults */
-          }
 
           const result = {
             narrative: cleaned,
             seo,
             cached: false,
+            grounding: verified.grounding,
+            pipeline: { jobs: ledger.jobs, tokens: ledger, sourceTruncated: budgeted.truncated },
             usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
           return Response.json(result);
         } catch (err) {
           const msg = err instanceof Error ? err.message : "AI request failed";
-          const status = /429/.test(msg)
-            ? 429
-            : /402/.test(msg)
-              ? 402
-              : 500;
+          const status = /429/.test(msg) ? 429 : /402/.test(msg) ? 402 : 500;
           return new Response(JSON.stringify({ error: msg }), {
             status,
             headers: { "content-type": "application/json" },

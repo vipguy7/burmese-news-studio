@@ -37,7 +37,7 @@ export const SPORT_NAME_MAP: Record<string, NameEntry> = {
   Everton: { my: "အက်ဗာတန်", kind: "club" },
   "West Ham": { my: "ဝက်စ်ဟမ်း", kind: "club" },
   "Aston Villa": { my: "အက်စတန်ဗီလာ", kind: "club" },
-  "Brighton": { my: "ဘရိုက်တန်", kind: "club" },
+  Brighton: { my: "ဘရိုက်တန်", kind: "club" },
   "Crystal Palace": { my: "ခရစ်စတယ်ပါလက်စ်", kind: "club" },
   Fulham: { my: "ဖူလမ်", kind: "club" },
   "Nottingham Forest": { my: "နော့တင်ဟမ်ဖော်ရက်စ်", kind: "club" },
@@ -80,7 +80,7 @@ export const SPORT_NAME_MAP: Record<string, NameEntry> = {
   "Ligue 1": { my: "လီဂူး၁", kind: "competition" },
   "FA Cup": { my: "အက်ဖ်အေဖလား", kind: "competition" },
   "World Cup": { my: "ကမ္ဘာ့ဖလား", kind: "competition" },
-  "Euro": { my: "ဥရောပဖလား", kind: "competition" },
+  Euro: { my: "ဥရောပဖလား", kind: "competition" },
   "AFC Asian Cup": { my: "အာရှဖလား", kind: "competition" },
   // ── Stadiums ────────────────────────────────────────────────────────────
   "Old Trafford": { my: "အိုးလ်ထရက်ဖို့ဒ်", kind: "stadium" },
@@ -143,7 +143,15 @@ export function buildNamePromptTable(extra?: Record<string, NameEntry>): string 
     const line = `${en} → ${v.my}${v.short && v.short !== v.my ? ` (short: ${v.short})` : ""}`;
     (groups[v.kind] ??= []).push(line);
   }
-  const order: NameEntry["kind"][] = ["club", "national", "competition", "stadium", "player", "manager", "term"];
+  const order: NameEntry["kind"][] = [
+    "club",
+    "national",
+    "competition",
+    "stadium",
+    "player",
+    "manager",
+    "term",
+  ];
   return order
     .filter((k) => groups[k]?.length)
     .map((k) => `## ${k.toUpperCase()}\n${groups[k].join("\n")}`)

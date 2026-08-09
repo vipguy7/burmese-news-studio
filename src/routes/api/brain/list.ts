@@ -17,7 +17,10 @@ export const Route = createFileRoute("/api/brain/list")({
         const admin = supabaseAdmin as unknown as {
           from: (t: string) => {
             select: (cols: string) => {
-              order: (c: string, o: { ascending: boolean }) => {
+              order: (
+                c: string,
+                o: { ascending: boolean },
+              ) => {
                 limit: (n: number) => Promise<{ data: unknown; error: unknown }>;
               };
             };
@@ -25,14 +28,19 @@ export const Route = createFileRoute("/api/brain/list")({
         };
         const { data, error } = await admin
           .from("brain_items")
-          .select("id, created_by, title, content, source_url, source_type, language, tags, created_at")
+          .select(
+            "id, created_by, title, content, source_url, source_type, language, tags, created_at",
+          )
           .order("created_at", { ascending: false })
           .limit(200);
         if (error) {
-          return new Response(JSON.stringify({ error: String((error as Error).message ?? error) }), {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: String((error as Error).message ?? error) }),
+            {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            },
+          );
         }
         return Response.json({ items: data, viewer: userId });
       },

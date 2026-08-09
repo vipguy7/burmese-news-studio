@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
 import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
@@ -83,7 +81,10 @@ export const Route = createFileRoute("/api/brain/translate")({
           const admin = supabaseAdmin as unknown as {
             from: (t: string) => {
               select: (cols: string) => {
-                in: (c: string, v: string[]) => Promise<{ data: BrainRow[] | null; error: unknown }>;
+                in: (
+                  c: string,
+                  v: string[],
+                ) => Promise<{ data: BrainRow[] | null; error: unknown }>;
               };
             };
           };
@@ -124,7 +125,12 @@ export const Route = createFileRoute("/api/brain/translate")({
           }
         }
 
-        const key = await hashKey({ kind: "brain_translate", userId, ...body, ids: [...seen].sort() });
+        const key = await hashKey({
+          kind: "brain_translate",
+          userId,
+          ...body,
+          ids: [...seen].sort(),
+        });
         const cached = cacheGet(key);
         if (cached) return Response.json({ ...JSON.parse(cached), cached: true });
 
@@ -136,13 +142,18 @@ export const Route = createFileRoute("/api/brain/translate")({
           );
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-2.5-flash");
+        const { budgetText, BUDGETS, newLedger, runTextJob, verifyAndRepair } =
+          await import("@/lib/ai-pipeline.server");
+        const ledger = newLedger();
 
+        // Budget the corpus: split the source budget evenly across items so one
+        // long item can never crowd out the rest (or blow up the token bill).
+        const perItem = Math.max(400, Math.floor(BUDGETS.source / Math.max(1, sources.length)));
         const corpus = sources
           .map((s, i) => {
             const url = s.source_url ? `\nSOURCE URL: ${s.source_url}` : "";
-            return `[#${i + 1}] ${s.selected ? "(manually selected)" : "(recalled)"} ${s.title} (${s.language})${url}\n${s.content.slice(0, 6000)}`;
+            const body_ = budgetText(s.content, perItem).text;
+            return `[#${i + 1}] ${s.selected ? "(manually selected)" : "(recalled)"} ${s.title} (${s.language})${url}\n${body_}`;
           })
           .join("\n\n---\n\n");
 
@@ -168,8 +179,18 @@ ${corpus || "(no items provided — write from the brief alone, but state nothin
 Now produce the ${body.target_format.replace("_", " ")} in ${LANG_LABEL[body.target_language]}. Follow every CRITICAL RULE.`;
 
         try {
-          const out = await generateText({ model, system, prompt: userPrompt });
-          const cleaned = cleanNarrative(out.text);
+          const draft = cleanNarrative(
+            await runTextJob({ apiKey, job: "draft", system, prompt: userPrompt, ledger }),
+          );
+          // Grounding pass against the retrieved corpus (skipped when there is none).
+          const verified = await verifyAndRepair({
+            apiKey,
+            source: corpus,
+            draft,
+            ledger,
+            enabled: sources.length > 0,
+          });
+          const cleaned = cleanNarrative(verified.text);
           const result = {
             output: cleaned,
             sources: sources.map((s) => ({
@@ -183,6 +204,8 @@ Now produce the ${body.target_format.replace("_", " ")} in ${LANG_LABEL[body.tar
             target_format: body.target_format,
             target_language: body.target_language,
             cached: false,
+            grounding: verified.grounding,
+            pipeline: { jobs: ledger.jobs, tokens: ledger },
             usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));

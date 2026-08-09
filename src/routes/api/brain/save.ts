@@ -46,7 +46,9 @@ export const Route = createFileRoute("/api/brain/save")({
         const admin = supabaseAdmin as unknown as {
           from: (t: string) => {
             insert: (row: Record<string, unknown>) => {
-              select: (cols: string) => { single: () => Promise<{ data: unknown; error: unknown }> };
+              select: (cols: string) => {
+                single: () => Promise<{ data: unknown; error: unknown }>;
+              };
             };
           };
         };
@@ -66,10 +68,13 @@ export const Route = createFileRoute("/api/brain/save")({
           .single();
 
         if (error) {
-          return new Response(JSON.stringify({ error: String((error as Error).message ?? error) }), {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: String((error as Error).message ?? error) }),
+            {
+              status: 500,
+              headers: { "content-type": "application/json" },
+            },
+          );
         }
         return Response.json({ item: data, embedded: !!embedding });
       },

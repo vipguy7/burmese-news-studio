@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import "@tanstack/react-start";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { cleanNarrative } from "@/lib/clean-output";
 import { cacheGet, cacheSet, hashKey } from "@/lib/ai-cache";
 import { checkAndIncrement, getUserIdFromRequest } from "@/lib/ai-quota.server";
@@ -26,24 +24,33 @@ const Body = z.object({
 });
 
 const TYPE_LABEL: Record<string, string> = {
-  match_review: "MATCH REVIEW — recap of a finished match. Lead with the result and key moments (goals, red cards, turning points). Then narrative flow of the game. End with what it means for the table / next fixture.",
-  match_preview: "MATCH PREVIEW — written before kickoff. Set the stakes, recent form of both sides, key players to watch, likely lineups if mentioned in source, prediction-style closer (no fake stats).",
-  match_analysis: "TACTICAL / MATCH ANALYSIS — deeper look at how the game was won/lost: formations, pressing, key duels, substitutions, manager decisions. Still conversational, not academic.",
-  highlights: "HIGHLIGHTS RECAP — punchy rundown of the standout moments only: goals, big saves, controversies. Short paragraphs, momentum-driven.",
-  player_profile: "PLAYER PROFILE — focus on one player. Background, current form, role at club / country, signature moments. Human and fan-facing.",
-  general: "GENERAL SPORTS STORY — transfer news, injury update, federation news, fan reaction, etc. Use the format the source naturally calls for.",
+  match_review:
+    "MATCH REVIEW — recap of a finished match. Lead with the result and key moments (goals, red cards, turning points). Then narrative flow of the game. End with what it means for the table / next fixture.",
+  match_preview:
+    "MATCH PREVIEW — written before kickoff. Set the stakes, recent form of both sides, key players to watch, likely lineups if mentioned in source, prediction-style closer (no fake stats).",
+  match_analysis:
+    "TACTICAL / MATCH ANALYSIS — deeper look at how the game was won/lost: formations, pressing, key duels, substitutions, manager decisions. Still conversational, not academic.",
+  highlights:
+    "HIGHLIGHTS RECAP — punchy rundown of the standout moments only: goals, big saves, controversies. Short paragraphs, momentum-driven.",
+  player_profile:
+    "PLAYER PROFILE — focus on one player. Background, current form, role at club / country, signature moments. Human and fan-facing.",
+  general:
+    "GENERAL SPORTS STORY — transfer news, injury update, federation news, fan reaction, etc. Use the format the source naturally calls for.",
 };
 
 const TONE_LABEL: Record<string, string> = {
-  casual: "casual fan-talk: everyday words, contractions, the way Myanmar football fans actually chat on Facebook and in tea shops",
+  casual:
+    "casual fan-talk: everyday words, contractions, the way Myanmar football fans actually chat on Facebook and in tea shops",
   hype: "high-energy, hyped-up matchday voice — excited but still accurate",
   analytical: "thoughtful pundit voice — still conversational, but with sharper observations",
 };
 
 const LANG_INSTR: Record<string, string> = {
   "burmese-casual": `Output MUST be in Burmese (Myanmar Unicode only — no Zawgyi), in casual everyday spoken/written register used by Burmese sports fans. NOT formal news Burmese. Use common loanwords as fans actually say them (e.g. "ပရီးမီးယားလိဂ်", "ချန်ပီယံစ်လိဂ်", "ဂိုးသွင်း", "ပွဲထွက်လူစာရင်း", "နည်းပြ", "အသင်းခေါင်းဆောင်", "ပူးတွဲ", "ပင်နယ်တီ", "ဖရီးကစ်", "ကော်နာ", "အလယ်တန်း", "ကွင်းလယ်", "နောက်တန်း", "ရှေ့တန်း"). Keep player/club names in their commonly used Burmese form when one exists, otherwise keep the Latin name as-is. Do not over-formalize.`,
-  english: "Output in clear, conversational sports-writing English. Active voice, short punchy paragraphs.",
-  bilingual: "Output FIRST a faithful literal Burmese (Unicode) version in casual fan register, then a blank line, then '---', a blank line, then the English version. Do not label them.",
+  english:
+    "Output in clear, conversational sports-writing English. Active voice, short punchy paragraphs.",
+  bilingual:
+    "Output FIRST a faithful literal Burmese (Unicode) version in casual fan register, then a blank line, then '---', a blank line, then the English version. Do not label them.",
 };
 
 export const Route = createFileRoute("/api/sport/generate")({
@@ -56,15 +63,18 @@ export const Route = createFileRoute("/api/sport/generate")({
         const userId = await getUserIdFromRequest(request);
         if (!userId) {
           return new Response(JSON.stringify({ error: "Sign in to use AI." }), {
-            status: 401, headers: { "content-type": "application/json" },
+            status: 401,
+            headers: { "content-type": "application/json" },
           });
         }
 
         let body: z.infer<typeof Body>;
-        try { body = Body.parse(await request.json()); }
-        catch (e) {
+        try {
+          body = Body.parse(await request.json());
+        } catch (e) {
           return new Response(JSON.stringify({ error: "Invalid request", detail: String(e) }), {
-            status: 400, headers: { "content-type": "application/json" },
+            status: 400,
+            headers: { "content-type": "application/json" },
           });
         }
 
@@ -76,7 +86,8 @@ export const Route = createFileRoute("/api/sport/generate")({
             sourceText = await fetchUrlText(body.source.trim());
           } catch (e) {
             return new Response(JSON.stringify({ error: (e as Error).message }), {
-              status: 400, headers: { "content-type": "application/json" },
+              status: 400,
+              headers: { "content-type": "application/json" },
             });
           }
         }
@@ -93,20 +104,27 @@ export const Route = createFileRoute("/api/sport/generate")({
             const admin = supabaseAdmin as unknown as {
               from: (t: string) => {
                 select: (cols: string) => {
-                  overlaps: (col: string, val: string[]) => {
+                  overlaps: (
+                    col: string,
+                    val: string[],
+                  ) => {
                     limit: (n: number) => Promise<{ data: Row[] | null }>;
                   };
                 };
               };
             };
-            const { data } = await admin.from("brain_items")
+            const { data } = await admin
+              .from("brain_items")
               .select("title, content, tags")
               .overlaps("tags", ["sport", "sport-name"])
               .limit(80);
             const glossaryRows: Row[] = [];
             for (const r of data ?? []) {
               if (r.tags?.includes("sport-name")) {
-                const [my, short] = r.content.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+                const [my, short] = r.content
+                  .split(/\r?\n/)
+                  .map((s) => s.trim())
+                  .filter(Boolean);
                 if (my) {
                   nameOverrides[r.title.trim()] = {
                     my,
@@ -123,7 +141,9 @@ export const Route = createFileRoute("/api/sport/generate")({
                 .map((r) => `• ${r.title}: ${r.content.slice(0, 600)}`)
                 .join("\n");
             }
-          } catch (e) { console.error("[sport/generate] brain fetch", e); }
+          } catch (e) {
+            console.error("[sport/generate] brain fetch", e);
+          }
         }
 
         const nameTable = buildNamePromptTable(nameOverrides);
@@ -140,8 +160,12 @@ export const Route = createFileRoute("/api/sport/generate")({
           );
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-2.5-flash");
+        const { budgetText, BUDGETS, newLedger, runTextJob, runJsonJob, verifyAndRepair } =
+          await import("@/lib/ai-pipeline.server");
+
+        const ledger = newLedger();
+        const budgetedSource = budgetText(sourceText, BUDGETS.source);
+        const budgetedContext = brainContext ? budgetText(brainContext, BUDGETS.context).text : "";
 
         const system = `You are a Burmese sports writer for a fan-first football/sports outlet. You take English (or mixed) sports source material and turn it into native-feeling Burmese sports content for Myanmar fans.
 
@@ -159,36 +183,51 @@ ABSOLUTE RULES:
 NAME NORMALIZATION TABLE (English → canonical Burmese):
 ${nameTable}`;
 
-        const userPrompt = `${brainContext ? `REFERENCE GLOSSARY & STYLE NOTES (Burmese sport vocabulary — use this when picking words):
-${brainContext}
+        const userPrompt = `${
+          budgetedContext
+            ? `REFERENCE GLOSSARY & STYLE NOTES (Burmese sport vocabulary — use this when picking words):
+${budgetedContext}
 
-` : ""}SOURCE MATERIAL:
-${sourceText}
+`
+            : ""
+        }SOURCE MATERIAL:
+${budgetedSource.text}
 
 Now write the ${body.contentType.replace("_", " ")} following every rule, especially NAME CONSISTENCY.`;
 
         try {
-          const out = await generateText({ model, system, prompt: userPrompt });
-          const rawCleaned = cleanNarrative(out.text);
-          const cleaned = body.outputLanguage === "english"
-            ? rawCleaned
-            : normalizeBurmeseNames(rawCleaned, {
-                extra: nameOverrides,
-                bilingual: body.outputLanguage === "bilingual",
-              });
+          // Job 1 — draft
+          const draft = cleanNarrative(
+            await runTextJob({ apiKey, job: "draft", system, prompt: userPrompt, ledger }),
+          );
 
-          // Lightweight SEO/categorization
-          let seo = { title: "", metaDescription: "", hashtags: [] as string[] };
-          try {
-            const seoRaw = await generateText({
-              model,
-              system: 'Output ONLY a JSON object, no markdown. Schema: {"title": string, "metaDescription": string, "hashtags": string[]}. Match the article\'s language. Hashtags: 3-6, sports-relevant.',
-              prompt: `ARTICLE:\n${cleaned}\n\nReturn JSON now.`,
-            });
-            const raw = seoRaw.text.trim().replace(/^```json\s*|\s*```$/g, "").replace(/^```\s*|\s*```$/g, "");
-            const match = raw.match(/\{[\s\S]*\}/);
-            if (match) seo = { ...seo, ...JSON.parse(match[0]) };
-          } catch { /* keep defaults */ }
+          // Job 2 + 3 — grounding check against the scraped source, repair only if needed
+          const verified = await verifyAndRepair({
+            apiKey,
+            source: budgetedSource.text,
+            draft,
+            ledger,
+          });
+
+          const rawCleaned = cleanNarrative(verified.text);
+          const cleaned =
+            body.outputLanguage === "english"
+              ? rawCleaned
+              : normalizeBurmeseNames(rawCleaned, {
+                  extra: nameOverrides,
+                  bilingual: body.outputLanguage === "bilingual",
+                });
+
+          // Job 4 — SEO
+          const seo = await runJsonJob({
+            apiKey,
+            job: "seo",
+            system:
+              'Output ONLY a JSON object, no markdown. Schema: {"title": string, "metaDescription": string, "hashtags": string[]}. Match the article\'s language. Hashtags: 3-6, sports-relevant.',
+            prompt: `ARTICLE:\n${budgetText(cleaned, BUDGETS.draft).text}\n\nReturn JSON now.`,
+            fallback: { title: "", metaDescription: "", hashtags: [] as string[] },
+            ledger,
+          });
 
           const result = {
             output: cleaned,
@@ -197,6 +236,12 @@ Now write the ${body.contentType.replace("_", " ")} following every rule, especi
             outputLanguage: body.outputLanguage,
             cached: false,
             brainUsed: !!brainContext,
+            grounding: verified.grounding,
+            pipeline: {
+              jobs: ledger.jobs,
+              tokens: ledger,
+              sourceTruncated: budgetedSource.truncated,
+            },
             usage: { used: quota.used, limit: quota.limit, remaining: quota.remaining },
           };
           cacheSet(key, JSON.stringify(result));
@@ -205,7 +250,8 @@ Now write the ${body.contentType.replace("_", " ")} following every rule, especi
           const msg = err instanceof Error ? err.message : "AI request failed";
           const status = /429/.test(msg) ? 429 : /402/.test(msg) ? 402 : 500;
           return new Response(JSON.stringify({ error: msg }), {
-            status, headers: { "content-type": "application/json" },
+            status,
+            headers: { "content-type": "application/json" },
           });
         }
       },
